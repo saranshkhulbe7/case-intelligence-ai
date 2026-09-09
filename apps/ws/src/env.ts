@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 const envSchema = z.object({
-  WS_PORT: z.coerce.number().int().positive().default(5001),
+  WS_PORT: z.coerce.number().int().positive().default(4500),
   WS_INSTANCE_ID: z.string().min(1).default("ws-local-1"),
   JWT_SECRET: z.string().min(32),
   FRONTEND_ORIGINS: z

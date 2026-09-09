@@ -1,9 +1,7 @@
-import { useRealtime } from "#hooks/use-realtime";
 import { trpc } from "#lib/trpc";
 import type { PublicUser } from "@agent-platform/contracts/user";
 import { Button } from "@agent-platform/ui/components/button";
-import { Outlet, useNavigate } from "react-router";
-import { Link } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 
 type AuthenticatedShellProps = {
   user: PublicUser;
@@ -11,21 +9,6 @@ type AuthenticatedShellProps = {
 
 export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
-
-  const chats = trpc.chatRouter.list.useQuery();
-
-  const realtime = useRealtime({
-    onEvent(event) {
-      console.log("[Realtime] event", event);
-    },
-    onReconnect() {
-      console.log("[Realtime] reconnected");
-    },
-    onRepeatedFailure() {
-      utils.authRouter.me.invalidate();
-    },
-  });
 
   const logout = trpc.authRouter.logout.useMutation({
     onSuccess() {
@@ -34,59 +17,73 @@ export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
       });
     },
   });
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <div className="grid min-h-screen grid-cols-[260px_1fr]">
-        <aside className="border-r border-border p-4">
-          <div className="mb-4">
-            <strong>Agent Platform</strong>
-
-            <p className="text-xs text-muted-foreground">{user.email}</p>
-
-            <p className="text-xs text-muted-foreground">
-              WS: {realtime.status}
-            </p>
+    <div className="min-h-screen bg-muted/20 text-foreground">
+      <div className="grid min-h-screen lg:grid-cols-[248px_1fr]">
+        <aside className="hidden border-r border-border bg-background lg:flex lg:flex-col">
+          <div className="border-b border-border px-5 py-5">
+            <Link to="/" className="block">
+              <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground">
+                CASE INTELLIGENCE
+              </p>
+              <p className="mt-1 text-lg font-semibold tracking-tight">
+                Review workspace
+              </p>
+            </Link>
           </div>
 
-          <Link
-            to="/chats/new"
-            className="flex h-9 w-full items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground"
-          >
-            + New chat
-          </Link>
-
-          <nav className="mt-4 grid gap-1">
-            {chats.data?.map((chat) => (
-              <Link
-                key={chat.id}
-                className="rounded-md px-3 py-2 text-sm hover:bg-accent"
-                to={`/chats/${chat.id}`}
-              >
-                <span className="block truncate">
-                  {chat.title ?? "Untitled chat"}
-                </span>
-
-                {chat.activeRun && (
-                  <span className="text-xs text-muted-foreground">
-                    {chat.activeRun.status}
-                  </span>
-                )}
-              </Link>
-            ))}
+          <nav className="grid gap-1 p-3">
+            <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                [
+                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                ].join(" ")
+              }
+            >
+              Cases
+            </NavLink>
           </nav>
 
-          <Button
-            className="mt-6 w-full"
-            variant="outline"
-            disabled={logout.isPending}
-            onClick={() => logout.mutate()}
-          >
-            Logout
-          </Button>
+          <div className="mt-auto border-t border-border p-4">
+            <p className="truncate text-sm font-medium">{user.name}</p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">
+              {user.email}
+            </p>
+
+            <Button
+              className="mt-4 w-full"
+              variant="outline"
+              disabled={logout.isPending}
+              onClick={() => logout.mutate()}
+            >
+              {logout.isPending ? "Signing out..." : "Sign out"}
+            </Button>
+          </div>
         </aside>
 
-        <main className="min-w-0 px-6 py-6">
-          <Outlet />
+        <main className="min-w-0">
+          <div className="mx-auto w-full max-w-7xl px-5 py-6 sm:px-8 sm:py-8">
+            <div className="mb-6 flex items-center justify-between lg:hidden">
+              <Link to="/" className="text-sm font-semibold tracking-tight">
+                Case Intelligence
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={logout.isPending}
+                onClick={() => logout.mutate()}
+              >
+                Sign out
+              </Button>
+            </div>
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

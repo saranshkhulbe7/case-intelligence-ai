@@ -53,7 +53,7 @@ export default function LoginPage() {
       <Card className="w-full">
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>Use your Agent Platform account.</CardDescription>
+          <CardDescription>Use your Case Intelligence account.</CardDescription>
         </CardHeader>
         <CardContent>
           <form
