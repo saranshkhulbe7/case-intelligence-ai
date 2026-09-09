@@ -1,0 +1,12 @@
+node_modules
+.env
+.env.*
+!.env.example
+dist
+.turbo
+.DS_Store
+
+packages/db/generated
+
+**/combined.txt
+**/doubts.txt

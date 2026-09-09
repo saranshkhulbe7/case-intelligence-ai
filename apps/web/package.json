@@ -1,0 +1,43 @@
+{
+  "name": "@agent-platform/web",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#components/*": "./src/components/*.tsx",
+    "#hooks/*": "./src/hooks/*.ts",
+    "#lib/*": "./src/lib/*.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-platform/contracts": "workspace:*",
+    "@agent-platform/ui": "workspace:*",
+    "@hookform/resolvers": "latest",
+    "@tanstack/react-query": "latest",
+    "@trpc/client": "latest",
+    "@trpc/react-query": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "react-hook-form": "latest",
+    "react-router": "6.30.6",
+    "react-router-dom": "6.30.6",
+    "superjson": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@agent-platform/http": "workspace:*",
+    "@agent-platform/typescript-config": "workspace:*",
+    "@tailwindcss/vite": "latest",
+    "@trpc/server": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@vitejs/plugin-react": "latest",
+    "typescript": "latest",
+    "vite": "latest",
+    "vite-plugin-pages": "0.33.3",
+    "tailwindcss": "latest"
+  }
+}

@@ -1,0 +1,48 @@
+enum MessageRole {
+    USER
+    ASSISTANT
+}
+
+enum MessageStatus {
+    STREAMING
+    COMPLETED
+    FAILED
+    CANCELLED
+}
+
+model Chat {
+    id          String   @id @default(uuid()) @db.Uuid
+    userId      String   @db.Uuid
+    title       String?
+    activeRunId String?  @unique @db.Uuid
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    messages Message[]
+    runs     Run[]     @relation("ChatRuns")
+
+    activeRun Run? @relation("ActiveRun", fields: [activeRunId], references: [id], onDelete: SetNull)
+
+    @@index([userId, updatedAt])
+}
+
+model Message {
+    id              String        @id @default(uuid()) @db.Uuid
+    chatId          String        @db.Uuid
+    clientMessageId String?       @unique @db.Uuid
+    role            MessageRole
+    status          MessageStatus @default(COMPLETED)
+    content         String        @default("")
+    streamSequence  Int           @default(0)
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+
+    chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+    triggeredRun    Run? @relation("RunTriggerMessage")
+    assistantForRun Run? @relation("RunAssistantMessage")
+
+    @@index([chatId, createdAt])
+}

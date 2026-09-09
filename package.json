@@ -1,0 +1,21 @@
+{
+  "name": "case-intelligence-ai",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.3.14",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "check": "turbo run check",
+    "dev:http": "cd apps/http && bun run dev",
+    "dev:ws": "cd apps/ws && bun run dev",
+    "dev:web": "cd apps/web && bun run dev",
+    "db:generate": "cd packages/db && bunx --bun prisma generate",
+    "db:migrate": "cd packages/db && bunx --bun prisma migrate dev",
+    "db:studio": "cd packages/db && bunx --bun prisma studio"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "turbo": "latest",
+    "typescript": "latest"
+  }
+}

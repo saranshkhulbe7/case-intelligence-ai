@@ -1,0 +1,8 @@
+{
+  "extends": "@agent-platform/typescript-config/bun.json",
+  "include": [
+    "src",
+    "generated",
+    "prisma.config.ts"
+  ]
+}

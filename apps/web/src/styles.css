@@ -1,0 +1,11 @@
+@import "@agent-platform/ui/globals.css";
+@source "../../../packages/ui/src";
+
+html {
+  min-width: 320px;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+}

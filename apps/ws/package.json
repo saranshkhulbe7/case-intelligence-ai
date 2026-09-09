@@ -1,0 +1,21 @@
+{
+  "name": "@agent-platform/ws",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --hot --env-file=../../.env src/index.ts",
+    "start": "bun --env-file=../../.env src/index.ts",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-platform/auth": "workspace:*",
+    "@agent-platform/contracts": "workspace:*",
+    "@agent-platform/db": "workspace:*",
+    "hono": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@agent-platform/typescript-config": "workspace:*",
+    "typescript": "latest"
+  }
+}

@@ -1,0 +1,12 @@
+import { router } from "../utils/trpc";
+import { authRouter } from "./auth";
+import { chatRouter } from "./chat";
+import { runRouter } from "./run";
+
+export const appRouter = router({
+  authRouter,
+  chatRouter,
+  runRouter,
+});
+
+export type AppRouter = typeof appRouter;

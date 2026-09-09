@@ -1,0 +1,22 @@
+{
+  "name": "@agent-platform/contracts",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./user": "./src/user.ts",
+    "./ws": "./src/ws.ts",
+    "./run": "./src/run.ts",
+    "./chat": "./src/chat.ts",
+    "./job": "./src/job.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "@agent-platform/typescript-config": "workspace:*",
+    "typescript": "latest"
+  }
+}

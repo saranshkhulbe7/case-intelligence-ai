@@ -1,0 +1,21 @@
+enum OutboxStatus {
+    PENDING
+    SENT
+}
+
+enum OutboxType {
+    ENQUEUE_RUN
+}
+
+model OutboxEvent {
+    id String @id @default(uuid()) @db.Uuid
+    type OutboxType
+    status OutboxStatus @default(PENDING)
+    payload Json
+    attempts Int @default(0)
+    lastError String?
+    createdAt DateTime @default(now())
+    sentAt DateTime?
+
+    @@index([status, createdAt])
+}

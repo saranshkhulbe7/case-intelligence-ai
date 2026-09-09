@@ -1,0 +1,20 @@
+{
+  "name": "@agent-platform/queue",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./run.queue": "./src/run.queue.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-platform/contracts": "workspace:*",
+    "bullmq": "latest",
+    "ioredis": "latest"
+  },
+  "devDependencies": {
+    "@agent-platform/typescript-config": "workspace:*",
+    "typescript": "latest"
+  }
+}

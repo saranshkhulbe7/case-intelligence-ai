@@ -1,0 +1,22 @@
+{
+  "name": "@agent-platform/auth",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./jwt": "./src/jwt.ts",
+     "./cookie": "./src/cookie.ts"
+  },
+  "scripts": {
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@agent-platform/contracts": "workspace:*",
+    "jsonwebtoken": "latest",
+    "hono": "latest"
+  },
+  "devDependencies": {
+    "@agent-platform/typescript-config": "workspace:*",
+    "@types/jsonwebtoken": "latest",
+    "typescript": "latest"
+  }
+}

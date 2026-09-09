@@ -1,0 +1,89 @@
+enum RunStatus {
+    QUEUED
+    RUNNING
+    WAITING_FOR_USER
+    COMPLETED
+    FAILED
+    CANCELLED
+}
+
+enum RunEventType {
+    RUN_CREATED
+    RUN_STARTED
+    RUN_ACTIVITY
+    QUESTION_GROUP_CREATED
+    QUESTION_GROUP_SUBMITTED
+    RUN_COMPLETED
+    RUN_FAILED
+    RUN_CANCELLED
+}
+
+enum QuestionResponseType {
+    ANSWERED
+    SKIPPED
+}
+
+model Run {
+    id                 String    @id @default(uuid()) @db.Uuid
+    chatId             String    @db.Uuid
+    triggerMessageId   String    @unique @db.Uuid
+    assistantMessageId String?   @unique @db.Uuid
+    status             RunStatus @default(QUEUED)
+    error              String?
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+    completedAt        DateTime?
+
+    chat           Chat    @relation("ChatRuns", fields: [chatId], references: [id], onDelete: Cascade)
+    triggerMessage Message @relation("RunTriggerMessage", fields: [triggerMessageId], references: [id], onDelete: Cascade)
+
+    assistantMessage Message? @relation("RunAssistantMessage", fields: [assistantMessageId], references: [id], onDelete: SetNull)
+
+    activeForChat Chat? @relation("ActiveRun")
+
+    events         RunEvent[]
+    questionGroups RunQuestionGroup[]
+
+    @@index([chatId, createdAt])
+}
+
+model RunEvent {
+    id        String       @id @default(uuid()) @db.Uuid
+    runId     String       @db.Uuid
+    type      RunEventType
+    message   String
+    createdAt DateTime     @default(now())
+
+    run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+    @@index([runId, createdAt])
+}
+
+model RunQuestionGroup {
+    id          String    @id @default(uuid()) @db.Uuid
+    runId       String    @db.Uuid
+    createdAt   DateTime  @default(now())
+    submittedAt DateTime?
+
+    run Run @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+    questions RunQuestion[]
+
+    @@index([runId, createdAt])
+}
+
+model RunQuestion {
+    id           String                @id @default(uuid()) @db.Uuid
+    groupId      String                @db.Uuid
+    position     Int
+    question     String
+    options      String[]
+    responseType QuestionResponseType?
+    answer       String?
+    createdAt    DateTime              @default(now())
+
+    group RunQuestionGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+    @@unique([groupId, position])
+    @@index([groupId, position])
+}
