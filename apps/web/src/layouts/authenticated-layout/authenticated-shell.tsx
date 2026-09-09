@@ -19,30 +19,30 @@ export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
   });
 
   return (
-    <div className="min-h-screen bg-muted/20 text-foreground">
-      <div className="grid min-h-screen lg:grid-cols-[248px_1fr]">
-        <aside className="hidden border-r border-border bg-background lg:flex lg:flex-col">
-          <div className="border-b border-border px-5 py-5">
-            <Link to="/" className="block">
-              <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground">
-                CASE INTELLIGENCE
-              </p>
-              <p className="mt-1 text-lg font-semibold tracking-tight">
-                Review workspace
-              </p>
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="grid min-h-screen lg:grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="hidden border-r border-border bg-sidebar lg:flex lg:flex-col">
+          <div className="flex h-14 items-center border-b border-border px-4">
+            <Link to="/" className="flex items-center gap-2.5">
+              <span className="flex size-7 items-center justify-center rounded-md bg-primary text-[11px] font-semibold text-primary-foreground">
+                CI
+              </span>
+              <span className="text-sm font-semibold tracking-[-0.01em]">
+                Case Intelligence
+              </span>
             </Link>
           </div>
 
-          <nav className="grid gap-1 p-3">
+          <nav className="grid gap-1 p-2" aria-label="Primary navigation">
             <NavLink
               to="/"
               end
               className={({ isActive }) =>
                 [
-                  "rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                  "rounded-md px-3 py-2 text-sm font-medium leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
                   isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+                    ? "bg-surface-selected text-foreground"
+                    : "text-muted-foreground hover:bg-surface-hover hover:text-foreground",
                 ].join(" ")
               }
             >
@@ -50,15 +50,15 @@ export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
             </NavLink>
           </nav>
 
-          <div className="mt-auto border-t border-border p-4">
-            <p className="truncate text-sm font-medium">{user.name}</p>
-            <p className="mt-1 truncate text-xs text-muted-foreground">
+          <div className="mt-auto border-t border-border p-3">
+            <p className="truncate text-sm font-medium leading-5">{user.name}</p>
+            <p className="mt-0.5 truncate text-xs leading-4 text-muted-foreground">
               {user.email}
             </p>
 
             <Button
-              className="mt-4 w-full"
-              variant="outline"
+              className="mt-3 w-full justify-start"
+              variant="ghost"
               disabled={logout.isPending}
               onClick={() => logout.mutate()}
             >
@@ -67,10 +67,10 @@ export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
           </div>
         </aside>
 
-        <main className="min-w-0">
-          <div className="mx-auto w-full max-w-7xl px-5 py-6 sm:px-8 sm:py-8">
-            <div className="mb-6 flex items-center justify-between lg:hidden">
-              <Link to="/" className="text-sm font-semibold tracking-tight">
+        <main className="min-w-0 bg-background">
+          <div className="w-full px-5 py-5 sm:px-6 lg:px-8 lg:py-6">
+            <div className="mb-5 flex h-9 items-center justify-between lg:hidden">
+              <Link to="/" className="text-sm font-semibold leading-5">
                 Case Intelligence
               </Link>
               <Button

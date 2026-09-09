@@ -6,85 +6,169 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
+  --app-background: oklch(0.975 0.003 247);
+  --sidebar-background: oklch(0.99 0.002 247);
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.958 0.004 247);
+  --surface-hover: oklch(0.94 0.007 247);
+  --surface-selected: oklch(0.92 0.024 252);
+  --border: oklch(0.9 0.006 247);
+  --border-strong: oklch(0.82 0.01 247);
+  --text-primary: oklch(0.22 0.01 247);
+  --text-secondary: oklch(0.46 0.012 247);
+  --text-muted: oklch(0.59 0.01 247);
+  --accent: oklch(0.5 0.15 255);
+  --accent-hover: oklch(0.45 0.15 255);
+  --accent-active: oklch(0.4 0.14 255);
+  --success: oklch(0.5 0.1 155);
+  --warning: oklch(0.6 0.13 75);
+  --danger: oklch(0.55 0.18 25);
+  --info: oklch(0.55 0.11 255);
 
-  --background: oklch(0.985 0 0);
-  --foreground: oklch(0.145 0 0);
-
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.985 0 0);
-
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --background: var(--app-background);
+  --foreground: var(--text-primary);
+  --card: var(--surface);
+  --card-foreground: var(--text-primary);
+  --primary: var(--accent);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: var(--surface-muted);
+  --secondary-foreground: var(--text-primary);
+  --muted: var(--surface-muted);
+  --muted-foreground: var(--text-secondary);
+  --accent-foreground: var(--text-primary);
+  --destructive: var(--danger);
+  --destructive-foreground: oklch(1 0 0);
+  --input: var(--border);
+  --ring: var(--accent);
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --app-background: oklch(0.18 0.01 247);
+  --sidebar-background: oklch(0.16 0.008 247);
+  --surface: oklch(0.22 0.01 247);
+  --surface-muted: oklch(0.27 0.012 247);
+  --surface-hover: oklch(0.31 0.014 247);
+  --surface-selected: oklch(0.32 0.04 252);
+  --border: oklch(0.34 0.012 247);
+  --border-strong: oklch(0.45 0.012 247);
+  --text-primary: oklch(0.95 0.003 247);
+  --text-secondary: oklch(0.74 0.01 247);
+  --text-muted: oklch(0.62 0.01 247);
+  --accent: oklch(0.68 0.13 255);
+  --accent-hover: oklch(0.74 0.12 255);
+  --accent-active: oklch(0.62 0.14 255);
+  --success: oklch(0.72 0.11 155);
+  --warning: oklch(0.76 0.12 75);
+  --danger: oklch(0.7 0.16 25);
+  --info: oklch(0.73 0.1 255);
 }
 
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
-
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--accent-hover);
+  --color-primary-active: var(--accent-active);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
+  --color-accent: var(--surface-hover);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar-background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-selected: var(--surface-selected);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
+  }
+
+  html {
+    text-rendering: optimizeLegibility;
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    font: inherit;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--accent) 22%, transparent);
+  }
+}
+
+@layer components {
+  .ui-page-title {
+    @apply text-2xl font-semibold leading-8 tracking-[-0.02em];
+  }
+
+  .ui-section-title {
+    @apply text-lg font-semibold leading-6 tracking-[-0.01em];
+  }
+
+  .ui-subsection-title {
+    @apply text-[15px] font-semibold leading-5;
+  }
+
+  .ui-label {
+    @apply text-xs font-medium leading-4 text-muted-foreground;
+  }
+
+  .ui-meta {
+    @apply text-xs leading-4 text-muted-foreground;
+  }
+
+  .ui-panel {
+    @apply border border-border bg-surface;
+  }
+
+  .ui-table-header {
+    @apply bg-surface-muted text-xs font-medium leading-4 text-muted-foreground;
+  }
+
+  .ui-table-row {
+    @apply border-b border-border transition-colors last:border-b-0 hover:bg-surface-hover;
+  }
+
+  .ui-tab {
+    @apply border-b-2 border-transparent px-3 py-2.5 text-sm font-medium leading-5 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset;
+  }
+
+  .ui-tab-active {
+    @apply border-primary text-foreground;
+  }
+
+  .ui-empty-state {
+    @apply border border-dashed border-border bg-surface px-4 py-8 text-center text-sm text-muted-foreground;
   }
 }

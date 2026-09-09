@@ -17,14 +17,14 @@ export default function CaseDetailPage() {
 
   if (!caseItem) {
     return (
-      <section className="border border-border bg-background p-6">
-        <h1 className="text-xl font-semibold">Case not found</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+      <section className="ui-panel p-5">
+        <h1 className="ui-section-title">Case not found</h1>
+        <p className="mt-2 text-sm leading-5 text-muted-foreground">
           The requested case is not available in the current review workspace.
         </p>
         <Link
           to="/"
-          className="mt-5 inline-block text-sm font-medium hover:underline"
+          className="mt-4 inline-block text-sm font-medium text-primary hover:text-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           Return to cases
         </Link>
@@ -34,47 +34,48 @@ export default function CaseDetailPage() {
 
   return (
     <section className="space-y-6">
-      <header className="border-b border-border pb-6">
-        <Link to="/" className="text-sm text-muted-foreground hover:underline">
-          Cases
-        </Link>
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <header className="border-b border-border">
+        <p className="ui-meta flex items-center gap-1.5">
+          <Link
+            to="/"
+            className="font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            Cases
+          </Link>
+          <span aria-hidden="true">/</span>
+          <span className="truncate text-foreground">{caseItem.name}</span>
+        </p>
+
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-semibold tracking-tight">
-                {caseItem.name}
-              </h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+              <h1 className="ui-page-title">{caseItem.name}</h1>
               <StatusBadge tone="success">{caseItem.status}</StatusBadge>
             </div>
-            <p className="mt-2 font-mono text-sm text-muted-foreground">
-              {caseItem.id}
-            </p>
+            <p className="ui-meta mt-1 font-mono">{caseItem.id}</p>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Last activity {caseItem.lastActivity}
-          </p>
+          <p className="ui-meta">Last activity {caseItem.lastActivity}</p>
+        </div>
+
+        <div
+          className="mt-5 flex overflow-x-auto"
+          role="tablist"
+          aria-label="Case details"
+        >
+          {detailTabs.map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab}
+              className={`ui-tab ${activeTab === tab ? "ui-tab-active" : ""}`}
+              onClick={() => setActiveTab(tab)}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
       </header>
-
-      <div className="flex overflow-x-auto border-b border-border" role="tablist">
-        {detailTabs.map((tab) => (
-          <button
-            key={tab}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab}
-            className={[
-              "border-b-2 px-4 py-3 text-sm font-medium transition-colors",
-              activeTab === tab
-                ? "border-foreground text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground",
-            ].join(" ")}
-            onClick={() => setActiveTab(tab)}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
 
       {activeTab === "Overview" && <OverviewTab caseItem={caseItem} />}
       {activeTab === "Documents" && <DocumentsTab caseItem={caseItem} />}
@@ -84,7 +85,7 @@ export default function CaseDetailPage() {
 }
 
 function OverviewTab({ caseItem }: { caseItem: MockCase }) {
-  const metrics = [
+  const details = [
     { label: "Status", value: caseItem.status },
     { label: "Documents", value: `${caseItem.documents.length} files` },
     { label: "Latest meeting", value: caseItem.latestMeeting },
@@ -93,23 +94,25 @@ function OverviewTab({ caseItem }: { caseItem: MockCase }) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <section className="space-y-6">
-        <div className="grid gap-px overflow-hidden border border-border bg-border sm:grid-cols-2">
-          {metrics.map((metric) => (
-            <div key={metric.label} className="bg-background p-5">
-              <p className="text-xs font-semibold tracking-wide text-muted-foreground">
-                {metric.label}
-              </p>
-              <p className="mt-2 text-base font-semibold">{metric.value}</p>
-            </div>
-          ))}
+      <section className="ui-panel">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="ui-subsection-title">Case overview</h2>
         </div>
 
-        <section className="border border-border bg-background">
-          <div className="border-b border-border px-5 py-4">
-            <h2 className="font-semibold">Case summary</h2>
-          </div>
-          <div className="space-y-4 p-5 text-sm leading-6 text-muted-foreground">
+        <dl className="grid divide-y divide-border sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+          {details.map((detail) => (
+            <div key={detail.label} className="px-4 py-3.5">
+              <dt className="ui-label">{detail.label}</dt>
+              <dd className="mt-1 text-sm font-medium leading-5 text-foreground">
+                {detail.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+
+        <div className="border-t border-border px-4 py-4">
+          <h2 className="ui-subsection-title">Case summary</h2>
+          <div className="mt-3 space-y-3 text-sm leading-6 text-muted-foreground">
             <p>
               This active case is ready for evidence review against governing
               check-in policy requirements.
@@ -119,23 +122,21 @@ function OverviewTab({ caseItem }: { caseItem: MockCase }) {
               initial Case Intelligence workspace.
             </p>
           </div>
-        </section>
+        </div>
       </section>
 
-      <section className="border border-border bg-background">
-        <div className="border-b border-border px-5 py-4">
-          <h2 className="font-semibold">Recent activity</h2>
+      <section className="ui-panel">
+        <div className="border-b border-border px-4 py-3">
+          <h2 className="ui-subsection-title">Recent activity</h2>
         </div>
         <ol className="divide-y divide-border">
           {caseItem.activity.map((activity) => (
-            <li key={activity.id} className="px-5 py-4">
-              <p className="text-sm font-medium">{activity.title}</p>
+            <li key={activity.id} className="px-4 py-3.5">
+              <p className="text-sm font-medium leading-5">{activity.title}</p>
               <p className="mt-1 text-sm leading-5 text-muted-foreground">
                 {activity.detail}
               </p>
-              <p className="mt-2 text-xs text-muted-foreground">
-                {activity.timestamp}
-              </p>
+              <p className="ui-meta mt-2">{activity.timestamp}</p>
             </li>
           ))}
         </ol>
@@ -154,17 +155,17 @@ function DocumentsTab({ caseItem }: { caseItem: MockCase }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 border border-border bg-background p-5 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-semibold">Case documents</h2>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h2 className="ui-section-title">Documents</h2>
+          <p className="mt-1 text-sm leading-5 text-muted-foreground">
             Evidence and governing materials available for this case.
           </p>
         </div>
         <Button variant="outline" disabled>
-          Upload Document
+          Upload document
         </Button>
-      </div>
+      </header>
 
       <DocumentSection
         title="Case evidence"
@@ -190,38 +191,44 @@ function DocumentSection({
   documents: CaseDocument[];
 }) {
   return (
-    <section className="overflow-hidden border border-border bg-background">
-      <div className="border-b border-border px-5 py-4">
-        <h2 className="font-semibold">{title}</h2>
-        <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+    <section className="ui-panel overflow-hidden">
+      <div className="border-b border-border px-4 py-3">
+        <h2 className="ui-subsection-title">{title}</h2>
+        <p className="mt-1 text-sm leading-5 text-muted-foreground">
+          {description}
+        </p>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[680px] text-left text-sm">
-          <thead className="border-b border-border bg-muted/40 text-xs font-semibold tracking-wide text-muted-foreground">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="ui-table-header border-b border-border">
             <tr>
-              <th className="px-5 py-3">Document</th>
-              <th className="px-5 py-3">Type</th>
-              <th className="px-5 py-3">Pages</th>
-              <th className="px-5 py-3">Status</th>
+              <th className="px-4 py-3 font-medium">Filename</th>
+              <th className="px-4 py-3 font-medium">Type</th>
+              <th className="px-4 py-3 font-medium">Pages</th>
+              <th className="px-4 py-3 font-medium">Processing</th>
+              <th className="px-4 py-3 font-medium">Date</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
+          <tbody>
             {documents.map((document) => (
-              <tr key={document.id}>
-                <td className="px-5 py-4 font-medium">{document.name}</td>
-                <td className="px-5 py-4 text-muted-foreground">
+              <tr key={document.id} className="ui-table-row">
+                <td className="px-4 py-3.5 font-medium leading-5">
+                  {document.name}
+                </td>
+                <td className="px-4 py-3.5 text-sm text-muted-foreground">
                   {document.type}
                 </td>
-                <td className="px-5 py-4 text-muted-foreground">
+                <td className="px-4 py-3.5 text-sm text-muted-foreground">
                   {document.pages}
                 </td>
-                <td className="px-5 py-4">
+                <td className="px-4 py-3.5">
                   <StatusBadge
                     tone={document.status === "Ready" ? "success" : "warning"}
                   >
                     {document.status}
                   </StatusBadge>
                 </td>
+                <td className="px-4 py-3.5 text-sm text-muted-foreground">—</td>
               </tr>
             ))}
           </tbody>
@@ -234,24 +241,31 @@ function DocumentSection({
 function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
   const [question, setQuestion] = useState(caseItem.analysis.question);
   const [showResult, setShowResult] = useState(false);
+  const checksMet = caseItem.analysis.checks.filter(
+    (check) => check.status === "MET",
+  ).length;
 
   return (
     <div className="space-y-6">
-      <section className="border border-border bg-background p-5">
-        <label
-          htmlFor="analysis-question"
-          className="text-sm font-semibold"
-        >
+      <header>
+        <h2 className="ui-section-title">Intelligence</h2>
+        <p className="mt-1 text-sm leading-5 text-muted-foreground">
+          Review case evidence against the applicable requirements.
+        </p>
+      </header>
+
+      <section className="ui-panel p-4">
+        <label htmlFor="analysis-question" className="ui-subsection-title">
           Ask a question about this case
         </label>
         <Textarea
           id="analysis-question"
-          className="mt-3 min-h-28 resize-y"
+          className="mt-3 min-h-24 resize-y"
           value={question}
           onChange={(event) => setQuestion(event.target.value)}
         />
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm leading-5 text-muted-foreground">
             Results are generated from frontend mock data in this phase.
           </p>
           <Button onClick={() => setShowResult(true)}>Analyse</Button>
@@ -259,9 +273,9 @@ function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
       </section>
 
       {!showResult && (
-        <section className="border border-dashed border-border bg-background px-5 py-10 text-center">
-          <h2 className="font-semibold">Analysis ready to run</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+        <section className="ui-empty-state">
+          <h2 className="font-medium text-foreground">Analysis ready to run</h2>
+          <p className="mx-auto mt-1 max-w-xl leading-5">
             Run the mock analysis to review conclusion, requirement checks, and
             cited evidence.
           </p>
@@ -269,64 +283,82 @@ function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
       )}
 
       {showResult && (
-        <section className="space-y-6">
-          <div className="border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50/50 p-5">
-            <p className="text-xs font-semibold tracking-[0.14em] text-amber-900">
-              OVERALL CONCLUSION
-            </p>
-            <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-xl font-semibold tracking-tight">
+        <section className="ui-panel overflow-hidden">
+          <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="ui-label">Latest analysis</p>
+              <h2 className="mt-1 ui-section-title">
                 {caseItem.analysis.conclusion}
               </h2>
+            </div>
+            <div className="flex items-center gap-3">
               <StatusBadge tone="warning">
                 {caseItem.analysis.conclusion}
               </StatusBadge>
+              <p className="text-sm font-medium leading-5 text-foreground">
+                {checksMet} / {caseItem.analysis.checks.length} met
+              </p>
             </div>
-            <p className="mt-4 max-w-3xl text-sm leading-6 text-amber-950/80">
+          </div>
+
+          <div className="px-4 py-4">
+            <p className="max-w-3xl text-sm leading-6 text-muted-foreground">
               {caseItem.analysis.summary}
             </p>
           </div>
 
-          <section className="overflow-hidden border border-border bg-background">
-            <div className="border-b border-border px-5 py-4">
-              <h2 className="font-semibold">Requirement checks</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+          <section className="border-t border-border">
+            <div className="px-4 py-3">
+              <h2 className="ui-subsection-title">Requirements</h2>
+              <p className="mt-1 text-sm leading-5 text-muted-foreground">
                 Evidence-backed assessment of each check-in requirement.
               </p>
             </div>
             <div className="divide-y divide-border">
-              {caseItem.analysis.checks.map((check, index) => (
-                <article
-                  key={check.id}
-                  className="grid gap-4 px-5 py-5 lg:grid-cols-[36px_minmax(0,1fr)_260px]"
-                >
-                  <p className="text-sm font-semibold text-muted-foreground">
-                    {String(index + 1).padStart(2, "0")}
-                  </p>
-                  <div>
-                    <div className="flex flex-wrap items-center gap-3">
-                      <h3 className="font-semibold">{check.requirement}</h3>
-                      <StatusBadge
-                        tone={check.status === "MET" ? "success" : "danger"}
-                      >
-                        {check.status}
-                      </StatusBadge>
+              {caseItem.analysis.checks.map((check) => {
+                const tone =
+                  check.status === "MET"
+                    ? "success"
+                    : check.status === "NOT MET"
+                      ? "danger"
+                      : "warning";
+
+                return (
+                  <article
+                    key={check.id}
+                    className="grid gap-3 px-4 py-4 sm:grid-cols-[20px_minmax(0,1fr)_minmax(190px,260px)]"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`mt-0.5 text-sm font-semibold leading-5 ${
+                        check.status === "MET" ? "text-success" : "text-danger"
+                      }`}
+                    >
+                      {check.status === "MET" ? "✓" : "×"}
+                    </span>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <h3 className="text-sm font-medium leading-5">
+                          {check.requirement}
+                        </h3>
+                        <StatusBadge tone={tone}>{check.status}</StatusBadge>
+                      </div>
+                      <p className="mt-2 text-sm leading-5 text-muted-foreground">
+                        {check.evidence}
+                      </p>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
-                      {check.evidence}
+                    <p className="ui-meta self-start border-l border-border pl-3 sm:mt-0">
+                      <span className="font-medium text-secondary-foreground">
+                        {check.citation.label}
+                      </span>
+                      <span className="mx-1">·</span>
+                      {check.citation.document}
+                      <span className="mx-1">·</span>
+                      p.{check.citation.page}
                     </p>
-                  </div>
-                  <div className="border-l border-border pl-4 text-sm">
-                    <p className="font-medium text-muted-foreground">
-                      {check.citation.label}
-                    </p>
-                    <p className="mt-2 font-medium">{check.citation.document}</p>
-                    <p className="mt-1 text-muted-foreground">
-                      Page {check.citation.page}
-                    </p>
-                  </div>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
           </section>
         </section>
