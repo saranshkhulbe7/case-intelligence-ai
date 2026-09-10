@@ -4,29 +4,35 @@ import { Button } from "@agent-platform/ui/components/button";
 import { Plus, Search } from "@agent-platform/ui/components/icons";
 import { Input } from "@agent-platform/ui/components/input";
 import { StatusBadge } from "../../components/status-badge";
-import { mockCases } from "../../data/mock-cases";
+import {
+  formatCaseStatus,
+  formatCaseShortDate,
+} from "../../lib/case-presentation";
+import { trpc } from "../../lib/trpc";
 import { useCaseWorkspace } from "../../layouts/authenticated-layout/authenticated-shell";
+
+type StatusFilter = "ALL" | "ACTIVE" | "CLOSED";
 
 export default function DashboardPage() {
   const navigate = useNavigate();
-  const { requestNewCase, showNewCaseNotice } = useCaseWorkspace();
+  const { requestNewCase } = useCaseWorkspace();
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("All statuses");
+  const [status, setStatus] = useState<StatusFilter>("ALL");
+  const cases = trpc.caseRouter.list.useQuery();
 
   const filteredCases = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
 
-    return mockCases.filter((caseItem) => {
+    return (cases.data ?? []).filter((caseItem) => {
       const matchesQuery =
         !normalizedQuery ||
         caseItem.name.toLowerCase().includes(normalizedQuery) ||
-        caseItem.id.toLowerCase().includes(normalizedQuery);
-      const matchesStatus =
-        status === "All statuses" || caseItem.status === status;
+        caseItem.caseNumber.toLowerCase().includes(normalizedQuery);
+      const matchesStatus = status === "ALL" || caseItem.status === status;
 
       return matchesQuery && matchesStatus;
     });
-  }, [query, status]);
+  }, [cases.data, query, status]);
 
   return (
     <section className="space-y-4">
@@ -37,15 +43,6 @@ export default function DashboardPage() {
           New case
         </Button>
       </header>
-
-      {showNewCaseNotice && (
-        <p
-          role="status"
-          className="border-y border-info/25 py-2 text-[13px] leading-5 text-muted-foreground"
-        >
-          New case creation will be available when case persistence is added.
-        </p>
-      )}
 
       <div className="flex flex-col gap-2 border-y border-border py-2 sm:flex-row sm:items-center">
         <div className="relative sm:w-72">
@@ -65,23 +62,44 @@ export default function DashboardPage() {
         </div>
         <select
           value={status}
-          onChange={(event) => setStatus(event.target.value)}
+          onChange={(event) => setStatus(event.target.value as StatusFilter)}
           aria-label="Filter cases by status"
           className="h-8 rounded-md border border-input bg-surface px-2.5 text-[13px] text-foreground transition-colors hover:border-border-strong focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25 sm:w-36"
         >
-          <option>All statuses</option>
-          <option>Active</option>
+          <option value="ALL">All statuses</option>
+          <option value="ACTIVE">Active</option>
+          <option value="CLOSED">Closed</option>
         </select>
       </div>
 
       <div role="list" className="border-y border-border">
+        {cases.isLoading && (
+          <p role="status" className="ui-empty-state px-3">
+            Loading cases...
+          </p>
+        )}
+
+        {cases.isError && (
+          <p role="alert" className="ui-empty-state px-3 text-danger">
+            Unable to load cases. Please try again.
+          </p>
+        )}
+
+        {!cases.isLoading && !cases.isError && filteredCases.length === 0 && (
+          <div className="ui-empty-state px-3">
+            {query || status !== "ALL"
+              ? "No cases match the current filters."
+              : "No cases yet. Create your first case to begin review."}
+          </div>
+        )}
+
         {filteredCases.map((caseItem) => (
           <article
             key={caseItem.id}
             role="link"
             tabIndex={0}
             aria-label={`Open case ${caseItem.name}`}
-            className="ui-list-row grid min-h-11 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-3 py-2 focus-visible:bg-surface-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:grid-cols-[minmax(220px,1.6fr)_minmax(100px,0.7fr)_72px_100px] sm:gap-x-5"
+            className="ui-list-row grid min-h-11 cursor-pointer grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-3 py-2 focus-visible:bg-surface-selected focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset sm:grid-cols-[minmax(220px,1fr)_minmax(100px,0.7fr)_100px] sm:gap-x-5"
             onClick={() => navigate(`/cases/${caseItem.id}`)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -93,27 +111,26 @@ export default function DashboardPage() {
             <div className="min-w-0">
               <p className="truncate text-[13px] font-medium leading-5 text-foreground">
                 {caseItem.name}
-                <span className="ui-meta ml-2 font-mono">{caseItem.id}</span>
+                <span className="ui-meta ml-2 font-mono">
+                  {caseItem.caseNumber}
+                </span>
               </p>
             </div>
             <div className="hidden sm:block">
-              <StatusBadge tone="success">{caseItem.status}</StatusBadge>
+              <StatusBadge tone={caseItem.status === "ACTIVE" ? "success" : "neutral"}>
+                {formatCaseStatus(caseItem.status)}
+              </StatusBadge>
             </div>
-            <p className="hidden text-[13px] text-muted-foreground sm:block">
-              {caseItem.documents.length} docs
-            </p>
             <p className="hidden text-right text-[12px] text-muted-foreground sm:block">
-              {caseItem.lastActivity.replace(", 2026", "")}
+              {formatCaseShortDate(caseItem.updatedAt)}
             </p>
             <div className="sm:hidden">
-              <StatusBadge tone="success">{caseItem.status}</StatusBadge>
+              <StatusBadge tone={caseItem.status === "ACTIVE" ? "success" : "neutral"}>
+                {formatCaseStatus(caseItem.status)}
+              </StatusBadge>
             </div>
           </article>
         ))}
-
-        {filteredCases.length === 0 && (
-          <div className="ui-empty-state px-3">No cases match the current filters.</div>
-        )}
       </div>
     </section>
   );

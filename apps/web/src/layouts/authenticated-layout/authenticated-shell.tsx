@@ -10,14 +10,13 @@ import {
   UserRound,
 } from "@agent-platform/ui/components/icons";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { mockCases } from "../../data/mock-cases";
+import { NewCaseDialog } from "../../components/new-case-dialog";
 
 type AuthenticatedShellProps = {
   user: PublicUser;
 };
 
 type CaseWorkspaceContextValue = {
-  showNewCaseNotice: boolean;
   requestNewCase: () => void;
 };
 
@@ -37,7 +36,7 @@ export function useCaseWorkspace() {
 
 export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
   const navigate = useNavigate();
-  const [showNewCaseNotice, setShowNewCaseNotice] = useState(false);
+  const [isNewCaseDialogOpen, setIsNewCaseDialogOpen] = useState(false);
 
   const logout = trpc.authRouter.logout.useMutation({
     onSuccess() {
@@ -48,13 +47,12 @@ export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
   });
 
   const requestNewCase = () => {
-    setShowNewCaseNotice(true);
-    navigate("/");
+    setIsNewCaseDialogOpen(true);
   };
 
   return (
     <CaseWorkspaceContext.Provider
-      value={{ showNewCaseNotice, requestNewCase }}
+      value={{ requestNewCase }}
     >
       <div className="min-h-screen bg-background text-foreground">
         <header className="h-11 border-b border-border bg-surface">
@@ -108,6 +106,10 @@ export function AuthenticatedShell({ user }: AuthenticatedShellProps) {
             </div>
           </main>
         </div>
+        <NewCaseDialog
+          open={isNewCaseDialogOpen}
+          onOpenChange={setIsNewCaseDialogOpen}
+        />
       </div>
     </CaseWorkspaceContext.Provider>
   );
@@ -168,6 +170,8 @@ function GlobalRail({
 }
 
 function ContextSidebar({ requestNewCase }: { requestNewCase: () => void }) {
+  const cases = trpc.caseRouter.list.useQuery();
+
   return (
     <aside className="hidden min-w-0 flex-col border-r border-border bg-context lg:flex">
       <div className="flex h-11 items-center border-b border-border px-3">
@@ -210,7 +214,7 @@ function ContextSidebar({ requestNewCase }: { requestNewCase: () => void }) {
 
       <nav className="mt-3 px-2 py-1" aria-label="Recent cases">
         <p className="ui-label px-2 py-1.5">Recent</p>
-        {mockCases.map((caseItem) => (
+        {cases.data?.map((caseItem) => (
           <NavLink
             key={caseItem.id}
             to={`/cases/${caseItem.id}`}
@@ -226,6 +230,9 @@ function ContextSidebar({ requestNewCase }: { requestNewCase: () => void }) {
             {caseItem.name}
           </NavLink>
         ))}
+        {!cases.isLoading && cases.data?.length === 0 && (
+          <p className="ui-meta px-2 py-1.5">No recent cases</p>
+        )}
       </nav>
     </aside>
   );

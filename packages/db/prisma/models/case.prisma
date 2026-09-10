@@ -1,0 +1,20 @@
+enum CaseStatus {
+    ACTIVE
+    CLOSED
+}
+
+model Case {
+    id          String     @id @default(uuid()) @db.Uuid
+    caseNumber  String     @unique
+    name        String
+    description String?
+    status      CaseStatus @default(ACTIVE)
+
+    createdById String @db.Uuid
+    createdBy   User   @relation(fields: [createdById], references: [id])
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    @@index([createdById, updatedAt])
+}

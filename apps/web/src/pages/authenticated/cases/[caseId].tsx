@@ -4,19 +4,36 @@ import { Button } from "@agent-platform/ui/components/button";
 import { Check, FileText, X } from "@agent-platform/ui/components/icons";
 import { Textarea } from "@agent-platform/ui/components/textarea";
 import { StatusBadge } from "../../../components/status-badge";
-import type { CaseDocument, MockCase } from "../../../data/mock-cases";
-import { getMockCase } from "../../../data/mock-cases";
+import {
+  type MockDocument,
+  mockCaseContent,
+} from "../../../data/mock-case-content";
+import {
+  formatCaseDate,
+  formatCaseDateTime,
+  formatCaseStatus,
+} from "../../../lib/case-presentation";
+import { trpc } from "../../../lib/trpc";
+import type { RouterOutputs } from "../../../lib/trpc-types";
 
 type DetailTab = "Overview" | "Documents" | "Intelligence";
+type CaseItem = RouterOutputs["caseRouter"]["get"];
 
 const detailTabs: DetailTab[] = ["Overview", "Documents", "Intelligence"];
 
 export default function CaseDetailPage() {
   const { caseId } = useParams<{ caseId: string }>();
-  const caseItem = getMockCase(caseId);
   const [activeTab, setActiveTab] = useState<DetailTab>("Overview");
+  const caseQuery = trpc.caseRouter.get.useQuery(
+    { caseId: caseId ?? "" },
+    { enabled: Boolean(caseId) },
+  );
 
-  if (!caseItem) {
+  if (caseQuery.isLoading) {
+    return <p role="status" className="ui-empty-state">Loading case...</p>;
+  }
+
+  if (!caseQuery.data) {
     return (
       <section className="border-y border-border py-4">
         <h1 className="ui-section-title">Case not found</h1>
@@ -32,6 +49,9 @@ export default function CaseDetailPage() {
       </section>
     );
   }
+
+  const caseItem = caseQuery.data;
+  const statusTone = caseItem.status === "ACTIVE" ? "success" : "neutral";
 
   return (
     <section className="space-y-5">
@@ -49,10 +69,16 @@ export default function CaseDetailPage() {
 
         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
           <h1 className="ui-page-title">{caseItem.name}</h1>
-          <span className="ui-meta font-mono text-foreground">{caseItem.id}</span>
-          <StatusBadge tone="success">{caseItem.status}</StatusBadge>
+          <span className="ui-meta font-mono text-foreground">
+            {caseItem.caseNumber}
+          </span>
+          <StatusBadge tone={statusTone}>
+            {formatCaseStatus(caseItem.status)}
+          </StatusBadge>
         </div>
-        <p className="ui-meta mt-1.5">Last activity {caseItem.lastActivity}</p>
+        <p className="ui-meta mt-1.5">
+          Last activity {formatCaseDate(caseItem.updatedAt)}
+        </p>
 
         <div
           className="mt-3 flex overflow-x-auto"
@@ -75,18 +101,36 @@ export default function CaseDetailPage() {
       </header>
 
       {activeTab === "Overview" && <OverviewTab caseItem={caseItem} />}
-      {activeTab === "Documents" && <DocumentsTab caseItem={caseItem} />}
-      {activeTab === "Intelligence" && <IntelligenceTab caseItem={caseItem} />}
+      {activeTab === "Documents" && <DocumentsTab />}
+      {activeTab === "Intelligence" && <IntelligenceTab />}
     </section>
   );
 }
 
-function OverviewTab({ caseItem }: { caseItem: MockCase }) {
+function OverviewTab({
+  caseItem,
+}: {
+  caseItem: CaseItem;
+}) {
   const details = [
-    { label: "Status", value: caseItem.status },
-    { label: "Documents", value: `${caseItem.documents.length} files` },
-    { label: "Latest meeting", value: caseItem.latestMeeting },
-    { label: "Last analysed", value: caseItem.lastAnalysed },
+    { label: "Status", value: formatCaseStatus(caseItem.status) },
+    { label: "Created", value: formatCaseDate(caseItem.createdAt) },
+    { label: "Last updated", value: formatCaseDateTime(caseItem.updatedAt) },
+  ];
+
+  const activity = [
+    {
+      id: "created",
+      title: "Case created",
+      detail: "Case added to the review workspace.",
+      timestamp: formatCaseDateTime(caseItem.createdAt),
+    },
+    {
+      id: "updated",
+      title: "Case updated",
+      detail: "Case details were last updated.",
+      timestamp: formatCaseDateTime(caseItem.updatedAt),
+    },
   ];
 
   return (
@@ -100,8 +144,8 @@ function OverviewTab({ caseItem }: { caseItem: MockCase }) {
               <div
                 key={detail.label}
                 className={`grid grid-cols-[130px_minmax(0,1fr)] items-center gap-3 px-3 py-2.5 ${
-                  index % 2 === 0 ? "sm:border-r sm:border-border" : ""
-                } ${index < details.length - 2 ? "border-b border-border" : ""}`}
+                  index === 0 ? "sm:border-r sm:border-border" : ""
+                } ${index === 0 ? "border-b border-border" : ""}`}
               >
                 <dt className="ui-label">{detail.label}</dt>
                 <dd className="truncate text-[13px] font-medium leading-5 text-foreground">
@@ -113,16 +157,9 @@ function OverviewTab({ caseItem }: { caseItem: MockCase }) {
 
           <div className="border-t border-border px-3 py-3.5">
             <h2 className="ui-subsection-title">Case summary</h2>
-            <div className="mt-2 space-y-2 text-[13px] leading-5 text-muted-foreground">
-              <p>
-                This active case is ready for evidence review against governing
-                check-in policy requirements.
-              </p>
-              <p>
-                Documents and analysis shown here are frontend mock data for the
-                initial Case Intelligence workspace.
-              </p>
-            </div>
+            <p className="mt-2 text-[13px] leading-5 text-muted-foreground">
+              {caseItem.description || "No description has been added to this case."}
+            </p>
           </div>
         </div>
       </section>
@@ -130,18 +167,20 @@ function OverviewTab({ caseItem }: { caseItem: MockCase }) {
       <section className="border-t border-border pt-5 xl:ml-6 xl:border-t-0 xl:border-l xl:pl-5 xl:pt-0">
         <h2 className="ui-section-title">Recent activity</h2>
         <ol className="mt-3 divide-y divide-border border-y border-border">
-          {caseItem.activity.map((activity) => (
-            <li key={activity.id} className="flex gap-2.5 px-1 py-3">
+          {activity.map((activityItem) => (
+            <li key={activityItem.id} className="flex gap-2.5 px-1 py-3">
               <span
                 aria-hidden="true"
                 className="mt-1.5 size-1.5 shrink-0 rounded-full bg-info"
               />
               <div className="min-w-0">
-                <p className="text-[13px] font-medium leading-5">{activity.title}</p>
-                <p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">
-                  {activity.detail}
+                <p className="text-[13px] font-medium leading-5">
+                  {activityItem.title}
                 </p>
-                <p className="ui-meta mt-1.5">{activity.timestamp}</p>
+                <p className="mt-0.5 text-[13px] leading-5 text-muted-foreground">
+                  {activityItem.detail}
+                </p>
+                <p className="ui-meta mt-1.5">{activityItem.timestamp}</p>
               </div>
             </li>
           ))}
@@ -151,11 +190,11 @@ function OverviewTab({ caseItem }: { caseItem: MockCase }) {
   );
 }
 
-function DocumentsTab({ caseItem }: { caseItem: MockCase }) {
-  const evidenceDocuments = caseItem.documents.filter(
+function DocumentsTab() {
+  const evidenceDocuments = mockCaseContent.documents.filter(
     (document) => document.category === "Case evidence",
   );
-  const policyDocuments = caseItem.documents.filter(
+  const policyDocuments = mockCaseContent.documents.filter(
     (document) => document.category === "Governing policy",
   );
 
@@ -165,7 +204,7 @@ function DocumentsTab({ caseItem }: { caseItem: MockCase }) {
         <div>
           <h2 className="ui-section-title">Documents</h2>
           <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
-            Evidence and governing materials available for this case.
+            Document content remains mocked until the Document domain is implemented.
           </p>
         </div>
         <Button variant="outline" disabled>
@@ -194,7 +233,7 @@ function DocumentSection({
 }: {
   title: string;
   description: string;
-  documents: CaseDocument[];
+  documents: MockDocument[];
 }) {
   return (
     <section>
@@ -256,10 +295,10 @@ function DocumentSection({
   );
 }
 
-function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
-  const [question, setQuestion] = useState(caseItem.analysis.question);
+function IntelligenceTab() {
+  const [question, setQuestion] = useState(mockCaseContent.analysis.question);
   const [showResult, setShowResult] = useState(false);
-  const checksMet = caseItem.analysis.checks.filter(
+  const checksMet = mockCaseContent.analysis.checks.filter(
     (check) => check.status === "MET",
   ).length;
 
@@ -268,7 +307,7 @@ function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
       <header>
         <h2 className="ui-section-title">Intelligence</h2>
         <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
-          Review case evidence against the applicable requirements.
+          Analysis content remains mocked until the Intelligence domain is implemented.
         </p>
       </header>
 
@@ -306,17 +345,17 @@ function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
               <p className="ui-label">Latest analysis</p>
               <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                 <StatusBadge tone="warning">
-                  {caseItem.analysis.conclusion}
+                  {mockCaseContent.analysis.conclusion}
                 </StatusBadge>
                 <p className="text-[13px] font-medium leading-5">
-                  {checksMet} / {caseItem.analysis.checks.length} met
+                  {checksMet} / {mockCaseContent.analysis.checks.length} met
                 </p>
               </div>
             </div>
           </div>
 
           <p className="border-t border-border px-1 py-3 text-[13px] leading-5 text-muted-foreground">
-            {caseItem.analysis.summary}
+            {mockCaseContent.analysis.summary}
           </p>
 
           <section className="border-t border-border">
@@ -327,7 +366,7 @@ function IntelligenceTab({ caseItem }: { caseItem: MockCase }) {
               </p>
             </div>
             <div className="divide-y divide-border border-t border-border">
-              {caseItem.analysis.checks.map((check) => {
+              {mockCaseContent.analysis.checks.map((check) => {
                 const isMet = check.status === "MET";
 
                 return (
