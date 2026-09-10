@@ -4,9 +4,9 @@ services:
   postgres:
     image: postgres:18-alpine
     environment:
-      POSTGRES_USER: agent
-      POSTGRES_PASSWORD: agent_dev_password
-      POSTGRES_DB: agent_platform
+      POSTGRES_USER: ${POSTGRES_USER:-agent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-agent_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-agent_platform}
     ports:
       - "5432:5432"
     volumes:
@@ -32,6 +32,115 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    image: case-intelligence-ai-migrate:local
+    build:
+      context: .
+      target: migrate
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-agent_dev_password}@postgres:5432/${POSTGRES_DB:-agent_platform}?schema=public
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  http:
+    image: case-intelligence-ai-http:local
+    build:
+      context: .
+      target: http
+    env_file:
+      - .env
+    environment:
+      HTTP_PORT: "4000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-agent_dev_password}@postgres:5432/${POSTGRES_DB:-agent_platform}?schema=public
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "4000:4000"
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const response = await fetch('http://127.0.0.1:4000/health'); process.exit(response.ok ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  ws:
+    image: case-intelligence-ai-ws:local
+    build:
+      context: .
+      target: ws
+    env_file:
+      - .env
+    environment:
+      WS_PORT: "4500"
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "4500:4500"
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const response = await fetch('http://127.0.0.1:4500/health'); process.exit(response.ok ? 0 : 1)"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  web:
+    image: case-intelligence-ai-web:local
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+      args:
+        VITE_HTTP_URL: ${VITE_HTTP_URL:-http://localhost:4000}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:4500/ws}
+    ports:
+      - "5173:80"
+    depends_on:
+      http:
+        condition: service_healthy
+      ws:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  outbox-dispatcher:
+    image: case-intelligence-ai-outbox-dispatcher:local
+    build:
+      context: .
+      target: outbox-dispatcher
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-agent_dev_password}@postgres:5432/${POSTGRES_DB:-agent_platform}?schema=public
+      REDIS_URL: redis://${REDIS_HOST:-valkey}:${REDIS_PORT:-6379}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
+
+  ai-worker:
+    image: case-intelligence-ai-ai-worker:local
+    build:
+      context: .
+      dockerfile: Dockerfile.ai-worker
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-agent_dev_password}@postgres:5432/${POSTGRES_DB:-agent_platform}?schema=public
+      REDIS_URL: redis://${REDIS_HOST:-valkey}:${REDIS_PORT:-6379}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
 
 volumes:
   agent-postgres:

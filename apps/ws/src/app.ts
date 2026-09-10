@@ -17,6 +17,13 @@ type WsVariables = {
 export function createWsApp(env: Env) {
   const app = new Hono<{ Variables: WsVariables }>();
 
+  app.get("/health", (c) => {
+    return c.json({
+      ok: true,
+      service: "ws",
+    });
+  });
+
   app.use("/ws", async (c, next) => {
     const origin = c.req.header("Origin");
     if (!origin || !env.FRONTEND_ORIGINS.includes(origin)) {
