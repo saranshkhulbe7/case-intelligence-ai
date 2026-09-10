@@ -52,6 +52,9 @@ model DocumentProcessingJob {
     status          DocumentProcessingJobStatus @default(PENDING)
     attempts        Int                         @default(0)
     error           String?
+    leaseToken      String?                     @db.Uuid
+    leaseOwner      String?
+    leaseExpiresAt  DateTime?
     createdAt       DateTime                    @default(now())
     startedAt       DateTime?
     finishedAt      DateTime?
@@ -59,6 +62,7 @@ model DocumentProcessingJob {
 
     @@unique([documentId, pipelineVersion])
     @@index([status, createdAt])
+    @@index([status, leaseExpiresAt])
 }
 
 model DocumentChunk {

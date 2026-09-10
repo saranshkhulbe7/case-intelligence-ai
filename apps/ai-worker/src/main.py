@@ -3,7 +3,7 @@ import logging
 import signal
 
 from src.config import Settings
-from src.db.connection import DatabaseConnection
+from src.db.connection import DatabasePool
 from src.queue.worker import DocumentProcessingWorker, create_worker
 from src.storage.azure_blob import AzureBlobStorage
 
@@ -13,10 +13,17 @@ async def run() -> None:
     logging.getLogger("azure").setLevel(logging.WARNING)
     logging.getLogger("bullmq").setLevel(logging.WARNING)
     settings = Settings()
-    database = DatabaseConnection(settings.database_url)
-    connection = await database.connect()
+    pool_size = max(2, settings.worker_concurrency + 1)
+    database = DatabasePool(settings.database_url, pool_size)
+    await database.open()
     storage = AzureBlobStorage(settings)
-    processor = DocumentProcessingWorker(connection, storage, settings.worker_name)
+    processor = DocumentProcessingWorker(
+        database,
+        storage,
+        settings.worker_name,
+        settings.worker_lease_seconds,
+        settings.worker_heartbeat_seconds,
+    )
     worker = create_worker(
         settings.redis_url,
         settings.worker_name,
