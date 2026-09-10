@@ -1,4 +1,4 @@
-import type { RunJobInput } from "@agent-platform/contracts/job";
+import type { RunJobInput } from "@case-intelligence/contracts/job";
 import IORedis from "ioredis";
 import { Queue } from "bullmq";
 

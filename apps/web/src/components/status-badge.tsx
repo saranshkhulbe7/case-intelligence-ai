@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { cn } from "@agent-platform/ui/lib/utils";
+import { cn } from "@case-intelligence/ui/lib/utils";
 
 type BadgeTone = "success" | "warning" | "danger" | "info" | "neutral";
 

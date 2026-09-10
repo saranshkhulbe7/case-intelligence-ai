@@ -1,5 +1,5 @@
 {
-  "extends": "@agent-platform/typescript-config/react.json",
+  "extends": "@case-intelligence/typescript-config/react.json",
   "compilerOptions": {
     "types": ["bun"]
   },

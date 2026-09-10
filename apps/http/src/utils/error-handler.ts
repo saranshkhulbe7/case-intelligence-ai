@@ -1,4 +1,4 @@
-import { Prisma } from "@agent-platform/db/client";
+import { Prisma } from "@case-intelligence/db/client";
 import { TRPCError } from "@trpc/server";
 import type { StatusCode } from "hono/utils/http-status";
 import { ZodError } from "zod";

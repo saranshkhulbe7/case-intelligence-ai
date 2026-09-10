@@ -1,14 +1,14 @@
 import { createContext, useContext, useState } from "react";
 import { trpc } from "#lib/trpc";
-import type { PublicUser } from "@agent-platform/contracts/user";
-import { Button } from "@agent-platform/ui/components/button";
+import type { PublicUser } from "@case-intelligence/contracts/user";
+import { Button } from "@case-intelligence/ui/components/button";
 import {
   Briefcase,
   LayoutList,
   LogOut,
   Plus,
   UserRound,
-} from "@agent-platform/ui/components/icons";
+} from "@case-intelligence/ui/components/icons";
 import { Link, NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { NewCaseDialog } from "../../components/new-case-dialog";
 

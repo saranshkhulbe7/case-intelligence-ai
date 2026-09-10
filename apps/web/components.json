@@ -15,7 +15,7 @@
     "components": "#components",
     "hooks": "#hooks",
     "lib": "#lib",
-    "utils": "@agent-platform/ui/lib/utils",
-    "ui": "@agent-platform/ui/components"
+    "utils": "@case-intelligence/ui/lib/utils",
+    "ui": "@case-intelligence/ui/components"
   }
 }

@@ -1,7 +1,7 @@
 import z from "zod";
 import { getChat, listChats, sendMessage } from "../services/chat.service";
 import { protectedProcedure, router } from "../utils/trpc";
-import { sendMessageInputSchema } from "@agent-platform/contracts/chat";
+import { sendMessageInputSchema } from "@case-intelligence/contracts/chat";
 
 export const chatRouter = router({
   list: protectedProcedure.query(({ ctx }) => {

@@ -1,9 +1,9 @@
-import { verify } from "@agent-platform/auth/jwt";
-import type { PublicUser } from "@agent-platform/contracts/user";
+import { verify } from "@case-intelligence/auth/jwt";
+import type { PublicUser } from "@case-intelligence/contracts/user";
 import {
   decodeClientEvent,
   encodeServerEvent,
-} from "@agent-platform/contracts/ws";
+} from "@case-intelligence/contracts/ws";
 import { Hono } from "hono";
 import { upgradeWebSocket } from "hono/bun";
 import type { Env } from "./env";

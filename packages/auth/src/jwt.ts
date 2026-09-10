@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import {
   type PublicUser,
   publicUserSchema,
-} from "@agent-platform/contracts/user";
+} from "@case-intelligence/contracts/user";
 
 type TokenOptions = {
   secret: string;

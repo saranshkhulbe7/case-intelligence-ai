@@ -10,9 +10,9 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - agent-postgres:/var/lib/postgresql
+      - postgres-data:/var/lib/postgresql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U agent -d agent_platform"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,7 +26,7 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - agent-valkey:/data
+      - valkey-data:/data
     healthcheck:
       test: ["CMD", "valkey-cli", "ping"]
       interval: 5s
@@ -127,7 +127,7 @@ services:
         condition: service_healthy
 
   ai-worker:
-    image: case-intelligence-ai-ai-worker:local
+    image: case-intelligence-ai-worker:local
     build:
       context: .
       dockerfile: Dockerfile.ai-worker
@@ -143,5 +143,5 @@ services:
         condition: service_healthy
 
 volumes:
-  agent-postgres:
-  agent-valkey:
+  postgres-data:
+  valkey-data:

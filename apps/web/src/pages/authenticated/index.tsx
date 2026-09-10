@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@agent-platform/ui/components/button";
-import { Plus, Search } from "@agent-platform/ui/components/icons";
-import { Input } from "@agent-platform/ui/components/input";
+import { Button } from "@case-intelligence/ui/components/button";
+import { Plus, Search } from "@case-intelligence/ui/components/icons";
+import { Input } from "@case-intelligence/ui/components/input";
 import { StatusBadge } from "../../components/status-badge";
 import {
   formatCaseStatus,

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { Button } from "@agent-platform/ui/components/button";
-import { Check, FileText, X } from "@agent-platform/ui/components/icons";
-import { Textarea } from "@agent-platform/ui/components/textarea";
+import { Button } from "@case-intelligence/ui/components/button";
+import { Check, FileText, X } from "@case-intelligence/ui/components/icons";
+import { Textarea } from "@case-intelligence/ui/components/textarea";
 import { StatusBadge } from "../../../components/status-badge";
 import { UploadDocumentDialog } from "../../../components/upload-document-dialog";
 import { mockCaseContent } from "../../../data/mock-case-content";

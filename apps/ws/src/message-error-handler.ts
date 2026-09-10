@@ -1,4 +1,4 @@
-import { encodeServerEvent } from "@agent-platform/contracts/ws";
+import { encodeServerEvent } from "@case-intelligence/contracts/ws";
 import type { WSContext } from "hono/ws";
 import { ZodError } from "zod";
 

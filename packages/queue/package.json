@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/queue",
+  "name": "@case-intelligence/queue",
   "private": true,
   "type": "module",
   "exports": {
@@ -10,12 +10,12 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-platform/contracts": "workspace:*",
+    "@case-intelligence/contracts": "workspace:*",
     "bullmq": "latest",
     "ioredis": "latest"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "typescript": "latest"
   }
 }

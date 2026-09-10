@@ -1,7 +1,7 @@
 import z from "zod";
 
 import { loginService, signupService } from "../services/auth.service";
-import { sign } from "@agent-platform/auth/jwt";
+import { sign } from "@case-intelligence/auth/jwt";
 import { publicProcedure, router } from "../utils/trpc";
 import { authCookieUtils } from "../utils/cookies/auth";
 

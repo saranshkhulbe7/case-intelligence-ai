@@ -1,4 +1,4 @@
-import type { DocumentProcessingJobInput } from "@agent-platform/contracts/job";
+import type { DocumentProcessingJobInput } from "@case-intelligence/contracts/job";
 import { Queue } from "bullmq";
 import IORedis from "ioredis";
 

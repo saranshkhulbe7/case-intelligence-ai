@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/auth",
+  "name": "@case-intelligence/auth",
   "private": true,
   "type": "module",
   "exports": {
@@ -10,12 +10,12 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-platform/contracts": "workspace:*",
+    "@case-intelligence/contracts": "workspace:*",
     "jsonwebtoken": "latest",
     "hono": "latest"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "@types/jsonwebtoken": "latest",
     "typescript": "latest"
   }

@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/outbox-dispatcher",
+  "name": "@case-intelligence/outbox-dispatcher",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,13 +8,13 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-platform/contracts": "workspace:*",
-    "@agent-platform/db": "workspace:*",
-    "@agent-platform/queue": "workspace:*",
+    "@case-intelligence/contracts": "workspace:*",
+    "@case-intelligence/db": "workspace:*",
+    "@case-intelligence/queue": "workspace:*",
     "zod": "latest"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "typescript": "latest"
   }
 }

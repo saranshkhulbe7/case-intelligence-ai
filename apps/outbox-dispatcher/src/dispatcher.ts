@@ -1,13 +1,13 @@
 import {
   documentProcessingJobSchema,
   runJobSchema,
-} from "@agent-platform/contracts/job";
-import { createDatabase, Prisma } from "@agent-platform/db/client";
+} from "@case-intelligence/contracts/job";
+import { createDatabase, Prisma } from "@case-intelligence/db/client";
 import {
   createDocumentProcessingQueue,
   enqueueDocumentProcessing,
-} from "@agent-platform/queue/document-processing.queue";
-import { createQueue, enqueueRun } from "@agent-platform/queue/run.queue";
+} from "@case-intelligence/queue/document-processing.queue";
+import { createQueue, enqueueRun } from "@case-intelligence/queue/run.queue";
 import type { Env } from "./env";
 
 type ClaimedOutboxEvent = {

@@ -4,8 +4,8 @@ import {
   type ComponentProps,
   type ReactNode,
 } from "react";
-import { X } from "@agent-platform/ui/components/icons";
-import { cn } from "@agent-platform/ui/lib/utils";
+import { X } from "@case-intelligence/ui/components/icons";
+import { cn } from "@case-intelligence/ui/lib/utils";
 
 type DialogContextValue = {
   onOpenChange: (open: boolean) => void;

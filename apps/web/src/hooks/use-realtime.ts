@@ -3,7 +3,7 @@ import { env } from "../env";
 import {
   decodeServerEvent,
   type ServerWsEvent,
-} from "@agent-platform/contracts/ws";
+} from "@case-intelligence/contracts/ws";
 
 type RealtimeStatus = "connecting" | "connected" | "disconnected";
 

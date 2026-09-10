@@ -1,4 +1,4 @@
-import { createAuthCookies } from "@agent-platform/auth/cookie";
+import { createAuthCookies } from "@case-intelligence/auth/cookie";
 import { env } from "../env";
 
 export const authCookieUtils = createAuthCookies({

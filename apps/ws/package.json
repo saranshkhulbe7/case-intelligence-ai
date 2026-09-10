@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/ws",
+  "name": "@case-intelligence/ws",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,14 +8,14 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-platform/auth": "workspace:*",
-    "@agent-platform/contracts": "workspace:*",
-    "@agent-platform/db": "workspace:*",
+    "@case-intelligence/auth": "workspace:*",
+    "@case-intelligence/contracts": "workspace:*",
+    "@case-intelligence/db": "workspace:*",
     "hono": "latest",
     "zod": "latest"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "typescript": "latest"
   }
 }

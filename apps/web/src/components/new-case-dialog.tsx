@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@agent-platform/ui/components/button";
+import { Button } from "@case-intelligence/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -9,9 +9,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "./dialog";
-import { Input } from "@agent-platform/ui/components/input";
-import { Label } from "@agent-platform/ui/components/label";
-import { Textarea } from "@agent-platform/ui/components/textarea";
+import { Input } from "@case-intelligence/ui/components/input";
+import { Label } from "@case-intelligence/ui/components/label";
+import { Textarea } from "@case-intelligence/ui/components/textarea";
 import { trpc } from "../lib/trpc";
 
 type NewCaseDialogProps = {

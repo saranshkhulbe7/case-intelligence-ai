@@ -1,8 +1,8 @@
 import { BlockBlobClient } from "@azure/storage-blob";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@agent-platform/ui/components/button";
-import { FileText } from "@agent-platform/ui/components/icons";
-import { Label } from "@agent-platform/ui/components/label";
+import { Button } from "@case-intelligence/ui/components/button";
+import { FileText } from "@case-intelligence/ui/components/icons";
+import { Label } from "@case-intelligence/ui/components/label";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";

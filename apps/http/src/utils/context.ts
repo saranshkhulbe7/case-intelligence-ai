@@ -1,4 +1,4 @@
-import { verify } from "@agent-platform/auth/jwt";
+import { verify } from "@case-intelligence/auth/jwt";
 import { Context } from "hono";
 import { authCookieUtils } from "./cookies/auth";
 import type { Env } from "../../env";

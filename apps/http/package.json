@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/http",
+  "name": "@case-intelligence/http",
   "private": true,
   "type": "module",
   "exports": {
@@ -11,9 +11,9 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@agent-platform/auth": "workspace:*",
-    "@agent-platform/contracts": "workspace:*",
-    "@agent-platform/db": "workspace:*",
+    "@case-intelligence/auth": "workspace:*",
+    "@case-intelligence/contracts": "workspace:*",
+    "@case-intelligence/db": "workspace:*",
     "@azure/identity": "^4.13.2",
     "@azure/storage-blob": "^12.33.0",
     "@hono/trpc-server": "latest",
@@ -23,7 +23,7 @@
     "zod": "latest"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "typescript": "latest"
   }
 }

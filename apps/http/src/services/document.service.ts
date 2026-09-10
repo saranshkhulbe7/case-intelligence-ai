@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Prisma } from "@agent-platform/db/client";
+import { Prisma } from "@case-intelligence/db/client";
 import { AppError } from "../utils/app-error";
 import {
   createBlobUploadUrl,

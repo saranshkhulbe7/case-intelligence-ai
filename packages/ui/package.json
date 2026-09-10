@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/ui",
+  "name": "@case-intelligence/ui",
   "private": true,
   "type": "module",
   "imports": {
@@ -27,7 +27,7 @@
     "react": ">=19"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "@types/react": "latest",
     "react": "latest",
     "typescript": "latest"

@@ -1,14 +1,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@agent-platform/ui/components/button";
+import { Button } from "@case-intelligence/ui/components/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@agent-platform/ui/components/card";
-import { Input } from "@agent-platform/ui/components/input";
-import { Label } from "@agent-platform/ui/components/label";
+} from "@case-intelligence/ui/components/card";
+import { Input } from "@case-intelligence/ui/components/input";
+import { Label } from "@case-intelligence/ui/components/label";
 import { useForm } from "react-hook-form";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { z } from "zod";

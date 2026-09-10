@@ -39,7 +39,7 @@ COPY packages/queue/package.json packages/queue/package.json
 COPY packages/typescript-config/package.json packages/typescript-config/package.json
 COPY packages/ui/package.json packages/ui/package.json
 
-RUN bun install --frozen-lockfile --production --filter @agent-platform/http --filter @agent-platform/ws --filter @agent-platform/outbox-dispatcher
+RUN bun install --frozen-lockfile --production --filter @case-intelligence/http --filter @case-intelligence/ws --filter @case-intelligence/outbox-dispatcher
 
 FROM oven/bun:1.3.14-alpine AS runtime
 

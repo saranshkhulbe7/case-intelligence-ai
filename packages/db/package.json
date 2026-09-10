@@ -1,5 +1,5 @@
 {
-  "name": "@agent-platform/db",
+  "name": "@case-intelligence/db",
   "private": true,
   "type": "module",
   "exports": {
@@ -14,7 +14,7 @@
     "pg": "latest"
   },
   "devDependencies": {
-    "@agent-platform/typescript-config": "workspace:*",
+    "@case-intelligence/typescript-config": "workspace:*",
     "@types/pg": "latest",
     "dotenv": "latest",
     "prisma": "7.10.0",
