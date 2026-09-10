@@ -18,6 +18,8 @@ type CreateDocumentUploadInput = {
   category: DocumentCategoryInput;
 };
 
+const DOCUMENT_PIPELINE_VERSION = 1;
+
 const documentSelect = {
   id: true,
   originalName: true,
@@ -150,6 +152,19 @@ export async function completeDocumentUpload(userId: string, documentId: string)
   const document = await getOwnedUploadDocument(userId, documentId);
 
   if (document.status !== "UPLOADING") {
+    if (
+      document.status === "UPLOADED" ||
+      document.status === "PROCESSING" ||
+      document.status === "READY"
+    ) {
+      return db.document.findUniqueOrThrow({
+        where: {
+          id: document.id,
+        },
+        select: documentSelect,
+      });
+    }
+
     throw new AppError(409, "Document is not awaiting upload completion");
   }
 
@@ -163,14 +178,81 @@ export async function completeDocumentUpload(userId: string, documentId: string)
     throw new AppError(400, "Uploaded blob content type is invalid");
   }
 
-  return db.document.update({
-    where: {
-      id: document.id,
-    },
-    data: {
-      status: "UPLOADED",
-      uploadedAt: new Date(),
-    },
-    select: documentSelect,
+  return db.$transaction(async (tx) => {
+    const uploadedAt = new Date();
+    const claimedDocument = await tx.document.updateMany({
+      where: {
+        id: document.id,
+        status: "UPLOADING",
+      },
+      data: {
+        status: "UPLOADED",
+        uploadedAt,
+      },
+    });
+
+    if (claimedDocument.count === 0) {
+      const existingDocument = await tx.document.findUnique({
+        where: {
+          id: document.id,
+        },
+        select: documentSelect,
+      });
+
+      if (!existingDocument) {
+        throw new AppError(404, "Document not found");
+      }
+
+      if (
+        existingDocument.status === "UPLOADED" ||
+        existingDocument.status === "PROCESSING" ||
+        existingDocument.status === "READY"
+      ) {
+        return existingDocument;
+      }
+
+      throw new AppError(409, "Document is not awaiting upload completion");
+    }
+
+    const processingJob = await tx.documentProcessingJob.upsert({
+      where: {
+        documentId_pipelineVersion: {
+          documentId: document.id,
+          pipelineVersion: DOCUMENT_PIPELINE_VERSION,
+        },
+      },
+      update: {},
+      create: {
+        documentId: document.id,
+        pipelineVersion: DOCUMENT_PIPELINE_VERSION,
+        status: "PENDING",
+      },
+      select: {
+        id: true,
+      },
+    });
+    const dedupeKey = `document-processing:${processingJob.id}`;
+
+    await tx.outboxEvent.upsert({
+      where: {
+        dedupeKey,
+      },
+      update: {},
+      create: {
+        type: "ENQUEUE_DOCUMENT_PROCESSING",
+        status: "PENDING",
+        dedupeKey,
+        payload: {
+          processingJobId: processingJob.id,
+        },
+      },
+    });
+
+    return tx.document.findUniqueOrThrow({
+      where: {
+        id: document.id,
+      },
+      select: documentSelect,
+    });
   });
 }

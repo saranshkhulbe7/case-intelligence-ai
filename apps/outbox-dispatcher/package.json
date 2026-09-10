@@ -1,18 +1,17 @@
 {
-  "name": "@agent-platform/queue",
+  "name": "@agent-platform/outbox-dispatcher",
   "private": true,
   "type": "module",
-  "exports": {
-    "./run.queue": "./src/run.queue.ts",
-    "./document-processing.queue": "./src/document-processing.queue.ts"
-  },
   "scripts": {
+    "dev": "bun --hot --env-file=../../.env src/index.ts",
+    "start": "bun --env-file=../../.env src/index.ts",
     "check": "tsc --noEmit"
   },
   "dependencies": {
     "@agent-platform/contracts": "workspace:*",
-    "bullmq": "latest",
-    "ioredis": "latest"
+    "@agent-platform/db": "workspace:*",
+    "@agent-platform/queue": "workspace:*",
+    "zod": "latest"
   },
   "devDependencies": {
     "@agent-platform/typescript-config": "workspace:*",

@@ -7,6 +7,8 @@
   "scripts": {
     "check": "turbo run check",
     "dev:http": "cd apps/http && bun run dev",
+    "dev:outbox": "cd apps/outbox-dispatcher && bun run dev",
+    "dev:ai-worker": "cd apps/ai-worker && uv run --env-file=../../.env python -m src.main",
     "dev:ws": "cd apps/ws && bun run dev",
     "dev:web": "cd apps/web && bun run dev",
     "db:generate": "cd packages/db && bunx --bun prisma generate",

@@ -1,10 +1,12 @@
 enum OutboxStatus {
     PENDING
+    PROCESSING
     SENT
 }
 
 enum OutboxType {
     ENQUEUE_RUN
+    ENQUEUE_DOCUMENT_PROCESSING
 }
 
 model OutboxEvent {
@@ -12,10 +14,14 @@ model OutboxEvent {
     type OutboxType
     status OutboxStatus @default(PENDING)
     payload Json
+    dedupeKey String? @unique
     attempts Int @default(0)
     lastError String?
+    lockedAt DateTime?
+    lockedBy String?
     createdAt DateTime @default(now())
     sentAt DateTime?
 
     @@index([status, createdAt])
+    @@index([status, lockedAt, createdAt])
 }

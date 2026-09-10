@@ -28,8 +28,48 @@ model Document {
 
     uploadedAt   DateTime?
 
+    processingJobs DocumentProcessingJob[]
+    chunks         DocumentChunk[]
+
     createdAt    DateTime         @default(now())
     updatedAt    DateTime         @updatedAt
 
     @@index([caseId, createdAt])
+}
+
+enum DocumentProcessingJobStatus {
+    PENDING
+    RUNNING
+    SUCCEEDED
+    FAILED
+}
+
+model DocumentProcessingJob {
+    id              String                      @id @default(uuid()) @db.Uuid
+    documentId      String                      @db.Uuid
+    document        Document                    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+    pipelineVersion Int                         @default(1)
+    status          DocumentProcessingJobStatus @default(PENDING)
+    attempts        Int                         @default(0)
+    error           String?
+    createdAt       DateTime                    @default(now())
+    startedAt       DateTime?
+    finishedAt      DateTime?
+    updatedAt       DateTime                    @updatedAt
+
+    @@unique([documentId, pipelineVersion])
+    @@index([status, createdAt])
+}
+
+model DocumentChunk {
+    id          String   @id @default(uuid()) @db.Uuid
+    documentId  String   @db.Uuid
+    document    Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+    pageNumber  Int
+    chunkIndex  Int
+    content     String
+    createdAt   DateTime @default(now())
+
+    @@unique([documentId, chunkIndex])
+    @@index([documentId, pageNumber])
 }
