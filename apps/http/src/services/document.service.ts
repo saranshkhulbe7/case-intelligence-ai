@@ -3,6 +3,7 @@ import { Prisma } from "@agent-platform/db/client";
 import { AppError } from "../utils/app-error";
 import {
   createBlobUploadUrl,
+  deleteBlobIfExists,
   getBlobProperties,
 } from "./azure-blob.service";
 import { db } from "../utils/db";
@@ -126,6 +127,23 @@ export async function refreshDocumentUploadUrl(userId: string, documentId: strin
   }
 
   return createBlobUploadUrl(document.blobName);
+}
+
+export async function cancelDocumentUpload(userId: string, documentId: string) {
+  const document = await getOwnedUploadDocument(userId, documentId);
+
+  if (document.status !== "UPLOADING") {
+    throw new AppError(409, "Upload can only be cancelled while uploading");
+  }
+
+  await deleteBlobIfExists(document.blobName);
+  await db.document.delete({
+    where: {
+      id: document.id,
+    },
+  });
+
+  return { success: true };
 }
 
 export async function completeDocumentUpload(userId: string, documentId: string) {

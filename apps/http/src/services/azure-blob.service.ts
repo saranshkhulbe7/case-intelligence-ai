@@ -86,3 +86,15 @@ export async function getBlobProperties(
     throw new AppError(503, "Unable to verify the uploaded document");
   }
 }
+
+export async function deleteBlobIfExists(blobName: string) {
+  try {
+    await containerClient.getBlockBlobClient(blobName).deleteIfExists();
+  } catch (error) {
+    if (getStatusCode(error) === 404) {
+      return;
+    }
+
+    throw new AppError(503, "Unable to remove the uploaded document");
+  }
+}

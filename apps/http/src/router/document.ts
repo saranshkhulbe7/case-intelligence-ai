@@ -1,5 +1,6 @@
 import z from "zod";
 import {
+  cancelDocumentUpload,
   completeDocumentUpload,
   listDocuments,
   refreshDocumentUploadUrl,
@@ -48,6 +49,15 @@ export const documentRouter = router({
     )
     .mutation(({ ctx, input }) => {
       return refreshDocumentUploadUrl(ctx.authUser.id, input.documentId);
+    }),
+  cancelUpload: protectedProcedure
+    .input(
+      z.object({
+        documentId: z.string().uuid(),
+      }),
+    )
+    .mutation(({ ctx, input }) => {
+      return cancelDocumentUpload(ctx.authUser.id, input.documentId);
     }),
   completeUpload: protectedProcedure
     .input(

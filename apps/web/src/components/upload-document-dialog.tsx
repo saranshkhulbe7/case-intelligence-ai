@@ -112,6 +112,7 @@ export function UploadDocumentDialog({
   const utils = trpc.useUtils();
   const requestUpload = trpc.documentRouter.requestUpload.useMutation();
   const refreshUploadUrl = trpc.documentRouter.refreshUploadUrl.useMutation();
+  const cancelUpload = trpc.documentRouter.cancelUpload.useMutation();
   const completeUpload = trpc.documentRouter.completeUpload.useMutation();
   const form = useForm<UploadForm>({
     resolver: zodResolver(uploadFormSchema),
@@ -121,9 +122,13 @@ export function UploadDocumentDialog({
     },
   });
   const [uploadItems, setUploadItems] = useState<UploadItem[]>([]);
+  const [discardingKeys, setDiscardingKeys] = useState<string[]>([]);
   const files = form.watch("files");
   const hasActiveUpload = uploadItems.some((item) =>
     ["PENDING", "PREPARING", "UPLOADING", "FINALIZING"].includes(item.state),
+  );
+  const hasUnresolvedFailedUpload = uploadItems.some(
+    (item) => item.state === "ERROR" && item.documentId,
   );
 
   function updateUploadItem(key: string, update: Partial<UploadItem>) {
@@ -230,8 +235,33 @@ export function UploadDocumentDialog({
     }
   }
 
+  async function discardUpload(item: UploadItem) {
+    setDiscardingKeys((current) => [...new Set([...current, item.key])]);
+
+    try {
+      if (item.documentId) {
+        await cancelUpload.mutateAsync({ documentId: item.documentId });
+      }
+
+      setUploadItems((current) =>
+        current.filter((currentItem) => currentItem.key !== item.key),
+      );
+
+      if (item.documentId) {
+        await utils.documentRouter.list.invalidate({ caseId }).catch(() => undefined);
+      }
+    } catch (error) {
+      updateUploadItem(item.key, { error: uploadErrorMessage(error) });
+    } finally {
+      setDiscardingKeys((current) => current.filter((key) => key !== item.key));
+    }
+  }
+
   function handleOpenChange(nextOpen: boolean) {
-    if (!nextOpen && hasActiveUpload) {
+    if (
+      !nextOpen &&
+      (hasActiveUpload || hasUnresolvedFailedUpload || discardingKeys.length > 0)
+    ) {
       return;
     }
 
@@ -287,7 +317,7 @@ export function UploadDocumentDialog({
               <div>
                 <p className="ui-subsection-title">Upload progress</p>
                 <p className="ui-meta mt-0.5">
-                  Retry uses a fresh upload URL. Uploads do not continue after a page reload.
+                  Retry uses a fresh upload URL. Failed uploads must be retried or discarded before closing. Reloading can still leave an unfinished upload.
                 </p>
               </div>
               <ul className="divide-y divide-border border-y border-border">
@@ -311,14 +341,26 @@ export function UploadDocumentDialog({
                       {formatFileSize(item.file.size)}
                     </span>
                     {item.state === "ERROR" && (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        onClick={() => void retryUpload(item)}
-                      >
-                        Retry
-                      </Button>
+                      <div className="flex shrink-0 gap-1.5">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={discardingKeys.includes(item.key)}
+                          onClick={() => void retryUpload(item)}
+                        >
+                          Retry
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={discardingKeys.includes(item.key)}
+                          onClick={() => void discardUpload(item)}
+                        >
+                          Discard
+                        </Button>
+                      </div>
                     )}
                   </li>
                 ))}
@@ -330,7 +372,11 @@ export function UploadDocumentDialog({
             <Button
               type="button"
               variant="outline"
-              disabled={hasActiveUpload}
+              disabled={
+                hasActiveUpload ||
+                hasUnresolvedFailedUpload ||
+                discardingKeys.length > 0
+              }
               onClick={() => handleOpenChange(false)}
             >
               Cancel
