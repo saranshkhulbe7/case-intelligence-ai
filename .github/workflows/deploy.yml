@@ -1,0 +1,301 @@
+name: Deploy production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      force_all:
+        description: Deploy every application and run the migration job
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-deploy-main
+  cancel-in-progress: true
+
+env:
+  RESOURCE_GROUP: rg-case-intelligence-dev
+  ACR_NAME: acrcaseintelsk26
+  ACR_LOGIN_SERVER: acrcaseintelsk26.azurecr.io
+  IMAGE_TAG: ${{ github.sha }}
+  AZURE_EXTENSION_USE_DYNAMIC_INSTALL: yes_without_prompt
+
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    outputs:
+      http: ${{ steps.affected.outputs.http }}
+      ws: ${{ steps.affected.outputs.ws }}
+      web: ${{ steps.affected.outputs.web }}
+      outbox: ${{ steps.affected.outputs.outbox }}
+      worker: ${{ steps.affected.outputs.worker }}
+      migrate: ${{ steps.affected.outputs.migrate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - id: affected
+        env:
+          BASE_SHA: ${{ github.event_name == 'push' && github.event.before || github.sha }}
+          FORCE_ALL: ${{ inputs.force_all || false }}
+        run: |
+          if [ "$FORCE_ALL" = "true" ]; then
+            bun scripts/affected.mjs --base "$BASE_SHA" --head "$GITHUB_SHA" --force-all
+          else
+            bun scripts/affected.mjs --base "$BASE_SHA" --head "$GITHUB_SHA"
+          fi
+
+  checks:
+    needs: detect
+    if: >-
+      needs.detect.outputs.http == 'true' || needs.detect.outputs.ws == 'true' ||
+      needs.detect.outputs.web == 'true' || needs.detect.outputs.outbox == 'true' ||
+      needs.detect.outputs.worker == 'true' || needs.detect.outputs.migrate == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        if: >-
+          needs.detect.outputs.http == 'true' || needs.detect.outputs.ws == 'true' ||
+          needs.detect.outputs.web == 'true' || needs.detect.outputs.outbox == 'true' ||
+          needs.detect.outputs.migrate == 'true'
+        with:
+          bun-version: 1.3.14
+      - name: Install Bun dependencies
+        if: >-
+          needs.detect.outputs.http == 'true' || needs.detect.outputs.ws == 'true' ||
+          needs.detect.outputs.web == 'true' || needs.detect.outputs.outbox == 'true' ||
+          needs.detect.outputs.migrate == 'true'
+        run: bun install --frozen-lockfile
+      - name: Generate Prisma client
+        if: >-
+          needs.detect.outputs.http == 'true' || needs.detect.outputs.ws == 'true' ||
+          needs.detect.outputs.web == 'true' || needs.detect.outputs.outbox == 'true' ||
+          needs.detect.outputs.migrate == 'true'
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/postgres
+        run: bun run db:generate
+      - name: Check TypeScript
+        if: >-
+          needs.detect.outputs.http == 'true' || needs.detect.outputs.ws == 'true' ||
+          needs.detect.outputs.web == 'true' || needs.detect.outputs.outbox == 'true' ||
+          needs.detect.outputs.migrate == 'true'
+        run: bun run check
+      - name: Build web
+        if: needs.detect.outputs.web == 'true'
+        env:
+          VITE_HTTP_URL: https://api-ci.saranshkhulbe.xyz
+          VITE_WS_URL: wss://ws-ci.saranshkhulbe.xyz/ws
+        run: bun run --cwd apps/web build
+      - name: Install uv
+        if: needs.detect.outputs.worker == 'true'
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: 0.6.14
+      - name: Validate Python worker
+        if: needs.detect.outputs.worker == 'true'
+        working-directory: apps/ai-worker
+        run: uv run --locked python -m compileall -q src
+
+  migrate:
+    needs: [detect, checks]
+    if: >-
+      always() && needs.detect.outputs.migrate == 'true' &&
+      (needs.checks.result == 'success' || needs.checks.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Authenticate Docker with ACR
+        run: az acr login --name "$ACR_NAME"
+      - name: Build and push migration image
+        env:
+          IMAGE: ${{ env.ACR_LOGIN_SERVER }}/case-intelligence/migrate:${{ env.IMAGE_TAG }}
+        run: |
+          docker build --target migrate --tag "$IMAGE" .
+          docker push "$IMAGE"
+      - name: Run migration job
+        env:
+          IMAGE: ${{ env.ACR_LOGIN_SERVER }}/case-intelligence/migrate:${{ env.IMAGE_TAG }}
+          JOB_NAME: job-case-migrate-dev
+        run: |
+          az containerapp job update --name "$JOB_NAME" --resource-group "$RESOURCE_GROUP" --image "$IMAGE"
+          execution_name="$(az containerapp job start --name "$JOB_NAME" --resource-group "$RESOURCE_GROUP" --query name --output tsv)"
+          test -n "$execution_name"
+          for attempt in $(seq 1 90); do
+            status="$(az containerapp job execution show --name "$JOB_NAME" --resource-group "$RESOURCE_GROUP" --job-execution-name "$execution_name" --query properties.status --output tsv)"
+            case "$status" in
+              Succeeded)
+                exit 0
+                ;;
+              Failed|Canceled)
+                echo "Migration execution $execution_name finished with $status" >&2
+                exit 1
+                ;;
+            esac
+            sleep 10
+          done
+          echo "Migration execution $execution_name did not finish within 15 minutes" >&2
+          exit 1
+
+  deploy-http:
+    needs: [detect, checks, migrate]
+    if: >-
+      always() && needs.detect.outputs.http == 'true' &&
+      (needs.checks.result == 'success' || needs.checks.result == 'skipped') &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Authenticate Docker with ACR
+        run: az acr login --name "$ACR_NAME"
+      - name: Build, push, and deploy HTTP
+        env:
+          IMAGE: ${{ env.ACR_LOGIN_SERVER }}/case-intelligence/http:${{ env.IMAGE_TAG }}
+        run: |
+          docker build --target http --tag "$IMAGE" .
+          docker push "$IMAGE"
+          az containerapp update --name app-case-http-dev --resource-group "$RESOURCE_GROUP" --image "$IMAGE"
+      - name: Smoke test HTTP
+        run: curl --fail --show-error --silent --retry 12 --retry-delay 5 https://api-ci.saranshkhulbe.xyz/health
+
+  deploy-ws:
+    needs: [detect, checks, migrate]
+    if: >-
+      always() && needs.detect.outputs.ws == 'true' &&
+      (needs.checks.result == 'success' || needs.checks.result == 'skipped') &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Authenticate Docker with ACR
+        run: az acr login --name "$ACR_NAME"
+      - name: Build, push, and deploy WS
+        env:
+          IMAGE: ${{ env.ACR_LOGIN_SERVER }}/case-intelligence/ws:${{ env.IMAGE_TAG }}
+        run: |
+          docker build --target ws --tag "$IMAGE" .
+          docker push "$IMAGE"
+          az containerapp update --name app-case-ws-dev --resource-group "$RESOURCE_GROUP" --image "$IMAGE"
+      - name: Smoke test WS
+        run: curl --fail --show-error --silent --retry 12 --retry-delay 5 https://ws-ci.saranshkhulbe.xyz/health
+
+  deploy-outbox:
+    needs: [detect, checks, migrate]
+    if: >-
+      always() && needs.detect.outputs.outbox == 'true' &&
+      (needs.checks.result == 'success' || needs.checks.result == 'skipped') &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Authenticate Docker with ACR
+        run: az acr login --name "$ACR_NAME"
+      - name: Build, push, and deploy outbox dispatcher
+        env:
+          IMAGE: ${{ env.ACR_LOGIN_SERVER }}/case-intelligence/outbox:${{ env.IMAGE_TAG }}
+        run: |
+          docker build --target outbox-dispatcher --tag "$IMAGE" .
+          docker push "$IMAGE"
+          az containerapp update --name app-case-outbox-dev --resource-group "$RESOURCE_GROUP" --image "$IMAGE"
+
+  deploy-worker:
+    needs: [detect, checks, migrate]
+    if: >-
+      always() && needs.detect.outputs.worker == 'true' &&
+      (needs.checks.result == 'success' || needs.checks.result == 'skipped') &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Authenticate Docker with ACR
+        run: az acr login --name "$ACR_NAME"
+      - name: Build, push, and deploy worker
+        env:
+          IMAGE: ${{ env.ACR_LOGIN_SERVER }}/case-intelligence/worker:${{ env.IMAGE_TAG }}
+        run: |
+          docker build --file Dockerfile.ai-worker --tag "$IMAGE" .
+          docker push "$IMAGE"
+          az containerapp update --name app-case-worker-dev --resource-group "$RESOURCE_GROUP" --image "$IMAGE"
+
+  deploy-web:
+    needs: [detect, checks, migrate]
+    if: >-
+      always() && needs.detect.outputs.web == 'true' &&
+      (needs.checks.result == 'success' || needs.checks.result == 'skipped') &&
+      (needs.migrate.result == 'success' || needs.migrate.result == 'skipped')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Install Bun dependencies
+        run: bun install --frozen-lockfile
+      - name: Build web
+        env:
+          VITE_HTTP_URL: https://api-ci.saranshkhulbe.xyz
+          VITE_WS_URL: wss://ws-ci.saranshkhulbe.xyz/ws
+        run: bun run --cwd apps/web build
+      - name: Sign in to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Retrieve Static Web Apps deployment token
+        run: |
+          token="$(az staticwebapp secrets list --name swa-case-intelligence-dev --resource-group "$RESOURCE_GROUP" --query properties.apiKey --output tsv)"
+          echo "::add-mask::$token"
+          test -n "$token"
+          echo "SWA_DEPLOYMENT_TOKEN=$token" >> "$GITHUB_ENV"
+      - name: Deploy static web app
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ env.SWA_DEPLOYMENT_TOKEN }}
+          action: upload
+          app_location: apps/web/dist
+          output_location: ""
+          api_location: ""
+          skip_app_build: true
+      - name: Smoke test web
+        run: curl --fail --show-error --silent --retry 12 --retry-delay 5 https://ci.saranshkhulbe.xyz
