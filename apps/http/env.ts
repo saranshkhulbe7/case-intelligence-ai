@@ -4,6 +4,7 @@ const envSchema = z.object({
   HTTP_PORT: z.coerce.number().int().positive().default(4000),
   FRONTEND_ORIGINS: z.string().url().default("http://localhost:5173"),
   DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().url(),
   JWT_SECRET: z.string().min(32),
   ACCESS_TOKEN_TTL_SECONDS: z.coerce
     .number()

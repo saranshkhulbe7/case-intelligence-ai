@@ -2,8 +2,9 @@ import z from "zod";
 
 import { loginService, signupService } from "../services/auth.service";
 import { sign } from "@case-intelligence/auth/jwt";
-import { publicProcedure, router } from "../utils/trpc";
+import { protectedProcedure, publicProcedure, router } from "../utils/trpc";
 import { authCookieUtils } from "../utils/cookies/auth";
+import { getRedisClient } from "../utils/redis";
 
 export const authRouter = router({
   signup: publicProcedure
@@ -47,6 +48,20 @@ export const authRouter = router({
     return {
       ok: "true",
       message: "logout successful",
+    };
+  }),
+  createWsTicket: protectedProcedure.mutation(async ({ ctx }) => {
+    const ticket = crypto.randomUUID();
+    const expiresAt = new Date(Date.now() + 30_000).toISOString();
+    const redis = await getRedisClient();
+
+    await redis.set(`ws-ticket:${ticket}`, JSON.stringify(ctx.authUser), {
+      EX: 30,
+    });
+
+    return {
+      ticket,
+      expiresAt,
     };
   }),
 });

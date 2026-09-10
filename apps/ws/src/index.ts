@@ -1,6 +1,7 @@
 import { websocket } from "hono/bun";
 import { createWsApp } from "./app";
 import { env } from "./env";
+import { closeRedisClient } from "./redis";
 
 const app = createWsApp(env);
 
@@ -12,10 +13,22 @@ const server = Bun.serve({
 
 console.log(`WS server started on ws://localhost:${env.WS_PORT}/ws`);
 
-function shutdown() {
+let shuttingDown = false;
+
+async function shutdown() {
+  if (shuttingDown) {
+    return;
+  }
+
+  shuttingDown = true;
   server.stop();
+  await closeRedisClient();
   process.exit(0);
 }
 
-process.on("SIGINT", shutdown);
-process.on("SIGTERM", shutdown);
+process.on("SIGINT", () => {
+  void shutdown();
+});
+process.on("SIGTERM", () => {
+  void shutdown();
+});

@@ -4,6 +4,7 @@ import {
   decodeServerEvent,
   type ServerWsEvent,
 } from "@case-intelligence/contracts/ws";
+import { trpc } from "../lib/trpc";
 
 type RealtimeStatus = "connecting" | "connected" | "disconnected";
 
@@ -23,17 +24,75 @@ export function useRealtime({
   const reconnectAttemptRef = useRef(0);
   const onReconnectRef = useRef(onReconnect);
   const onRepeatedFailureRef = useRef(onRepeatedFailure);
+  const createWsTicket = trpc.authRouter.createWsTicket.useMutation();
+  const createWsTicketRef = useRef(createWsTicket.mutateAsync);
   const [status, setStatus] = useState<RealtimeStatus>("connecting");
   onEventRef.current = onEvent;
   onReconnectRef.current = onReconnect;
   onRepeatedFailureRef.current = onRepeatedFailure;
+  createWsTicketRef.current = createWsTicket.mutateAsync;
   useEffect(() => {
     let shouldReconnect = true;
-    function connect() {
+    let connectionAttempt = 0;
+
+    function scheduleReconnect() {
+      if (!shouldReconnect) {
+        return;
+      }
+
+      setStatus("disconnected");
+      reconnectAttemptRef.current += 1;
+      if (reconnectAttemptRef.current % 3 === 0) {
+        onRepeatedFailureRef.current();
+      }
+      const delay = Math.min(
+        1000 * 2 ** (reconnectAttemptRef.current - 1),
+        10_000,
+      );
+      reconnectTimerRef.current = window.setTimeout(() => {
+        reconnectTimerRef.current = null;
+        void connect();
+      }, delay);
+    }
+
+    async function connect() {
+      const attempt = ++connectionAttempt;
       setStatus("connecting");
-      const socket = new WebSocket(env.VITE_WS_URL);
+
+      let ticket: string;
+      try {
+        const response = await createWsTicketRef.current();
+        ticket = response.ticket;
+      } catch {
+        if (shouldReconnect && attempt === connectionAttempt) {
+          scheduleReconnect();
+        }
+        return;
+      }
+
+      if (!shouldReconnect || attempt !== connectionAttempt) {
+        return;
+      }
+
+      let socket: WebSocket;
+      try {
+        socket = new WebSocket(
+          `${env.VITE_WS_URL}?ticket=${encodeURIComponent(ticket)}`,
+        );
+      } catch {
+        if (shouldReconnect && attempt === connectionAttempt) {
+          scheduleReconnect();
+        }
+        return;
+      }
+
       socketRef.current = socket;
       socket.addEventListener("open", () => {
+        if (!shouldReconnect || attempt !== connectionAttempt) {
+          socket.close();
+          return;
+        }
+
         setStatus("connected");
         const wasReconnect = reconnectAttemptRef.current > 0;
         reconnectAttemptRef.current = 0;
@@ -42,20 +101,13 @@ export function useRealtime({
         }
       });
       socket.addEventListener("close", () => {
-        socketRef.current = null;
-        setStatus("disconnected");
-        if (!shouldReconnect) {
+        if (socketRef.current === socket) {
+          socketRef.current = null;
+        }
+        if (!shouldReconnect || attempt !== connectionAttempt) {
           return;
         }
-        reconnectAttemptRef.current += 1;
-        if (reconnectAttemptRef.current % 3 === 0) {
-          onRepeatedFailureRef.current();
-        }
-        const delay = Math.min(
-          1000 * 2 ** (reconnectAttemptRef.current - 1),
-          10_000,
-        );
-        reconnectTimerRef.current = window.setTimeout(connect, delay);
+        scheduleReconnect();
       });
       socket.addEventListener("error", (error) => {
         console.error("[Realtime] Websocket error", error);
@@ -70,10 +122,11 @@ export function useRealtime({
       });
     }
 
-    connect();
+    void connect();
 
     return () => {
       shouldReconnect = false;
+      connectionAttempt += 1;
       if (reconnectTimerRef.current !== null) {
         window.clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;

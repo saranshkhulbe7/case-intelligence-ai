@@ -1,6 +1,7 @@
 import { env } from "../env";
 import { createHttpApp } from "./app";
 import { db } from "./utils/db";
+import { closeRedisClient } from "./utils/redis";
 
 const app = createHttpApp(env);
 
@@ -12,7 +13,7 @@ console.log(`Server started at port ${env.HTTP_PORT}`);
 
 async function shutdown() {
   server.stop();
-  await db.$disconnect();
+  await Promise.all([db.$disconnect(), closeRedisClient()]);
   process.exit(0);
 }
 

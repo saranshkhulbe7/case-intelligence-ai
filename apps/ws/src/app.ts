@@ -1,4 +1,3 @@
-import { verify } from "@case-intelligence/auth/jwt";
 import type { PublicUser } from "@case-intelligence/contracts/user";
 import {
   decodeClientEvent,
@@ -7,8 +6,8 @@ import {
 import { Hono } from "hono";
 import { upgradeWebSocket } from "hono/bun";
 import type { Env } from "./env";
-import { authCookieUtils } from "./cookies/auth";
 import { withMessageErrorHandler } from "./message-error-handler";
+import { consumeWsTicket } from "./ws-ticket";
 
 type WsVariables = {
   authUser: PublicUser;
@@ -30,14 +29,15 @@ export function createWsApp(env: Env) {
       return c.text("Forbidden origin", 403);
     }
 
-    const token = authCookieUtils.getAuthCookie(c);
-    if (!token) {
-      return c.text("Authentication required", 401);
+    let user: PublicUser | null;
+    try {
+      user = await consumeWsTicket(c.req.query("ticket"));
+    } catch {
+      return c.text("Authentication unavailable", 503);
     }
 
-    const user = verify({ token }, { secret: env.JWT_SECRET });
     if (!user) {
-      return c.text("Invalid or expired authentication", 401);
+      return c.text("Authentication required", 401);
     }
 
     c.set("authUser", user);

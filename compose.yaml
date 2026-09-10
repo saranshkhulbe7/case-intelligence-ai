@@ -57,6 +57,7 @@ services:
     environment:
       HTTP_PORT: "4000"
       DATABASE_URL: postgresql://${POSTGRES_USER:-agent}:${POSTGRES_PASSWORD:-agent_dev_password}@postgres:5432/${POSTGRES_DB:-agent_platform}?schema=public
+      REDIS_URL: redis://${REDIS_HOST:-valkey}:${REDIS_PORT:-6379}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
@@ -64,6 +65,8 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      valkey:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "bun", "-e", "const response = await fetch('http://127.0.0.1:4000/health'); process.exit(response.ok ? 0 : 1)"]
       interval: 5s
@@ -79,10 +82,14 @@ services:
       - .env
     environment:
       WS_PORT: "4500"
+      REDIS_URL: redis://${REDIS_HOST:-valkey}:${REDIS_PORT:-6379}
       FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:5173}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
       - "4500:4500"
+    depends_on:
+      valkey:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "bun", "-e", "const response = await fetch('http://127.0.0.1:4500/health'); process.exit(response.ok ? 0 : 1)"]
       interval: 5s

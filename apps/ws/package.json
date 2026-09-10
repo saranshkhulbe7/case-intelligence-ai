@@ -8,10 +8,9 @@
     "check": "tsc --noEmit"
   },
   "dependencies": {
-    "@case-intelligence/auth": "workspace:*",
     "@case-intelligence/contracts": "workspace:*",
-    "@case-intelligence/db": "workspace:*",
     "hono": "latest",
+    "redis": "latest",
     "zod": "latest"
   },
   "devDependencies": {
