@@ -15,6 +15,7 @@
   "dependencies": {
     "@agent-platform/contracts": "workspace:*",
     "@agent-platform/ui": "workspace:*",
+    "@azure/storage-blob": "^12.33.0",
     "@hookform/resolvers": "latest",
     "@tanstack/react-query": "latest",
     "@trpc/client": "latest",

@@ -1,0 +1,35 @@
+enum DocumentCategory {
+    CASE_EVIDENCE
+    GOVERNING_POLICY
+}
+
+enum DocumentStatus {
+    UPLOADING
+    UPLOADED
+    PROCESSING
+    READY
+    FAILED
+}
+
+model Document {
+    id           String           @id @default(uuid()) @db.Uuid
+
+    caseId       String           @db.Uuid
+    case         Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
+
+    originalName String
+    contentType  String
+    sizeBytes    Int
+
+    blobName     String           @unique
+
+    category     DocumentCategory
+    status       DocumentStatus   @default(UPLOADING)
+
+    uploadedAt   DateTime?
+
+    createdAt    DateTime         @default(now())
+    updatedAt    DateTime         @updatedAt
+
+    @@index([caseId, createdAt])
+}

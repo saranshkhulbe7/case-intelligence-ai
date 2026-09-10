@@ -14,6 +14,8 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
+  AZURE_STORAGE_ACCOUNT_NAME: z.string().min(1),
+  AZURE_STORAGE_CONTAINER_NAME: z.string().min(1),
 });
 
 export type Env = z.infer<typeof envSchema>;

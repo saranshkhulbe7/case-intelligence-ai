@@ -1,6 +1,7 @@
 export {
   Briefcase,
   Check,
+  FileUp,
   FileText,
   LayoutList,
   LogOut,

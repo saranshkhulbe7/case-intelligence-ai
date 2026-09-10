@@ -4,20 +4,22 @@ import { Button } from "@agent-platform/ui/components/button";
 import { Check, FileText, X } from "@agent-platform/ui/components/icons";
 import { Textarea } from "@agent-platform/ui/components/textarea";
 import { StatusBadge } from "../../../components/status-badge";
-import {
-  type MockDocument,
-  mockCaseContent,
-} from "../../../data/mock-case-content";
+import { UploadDocumentDialog } from "../../../components/upload-document-dialog";
+import { mockCaseContent } from "../../../data/mock-case-content";
 import {
   formatCaseDate,
   formatCaseDateTime,
   formatCaseStatus,
+  formatCaseShortDate,
+  formatDocumentStatus,
+  formatFileSize,
 } from "../../../lib/case-presentation";
 import { trpc } from "../../../lib/trpc";
 import type { RouterOutputs } from "../../../lib/trpc-types";
 
 type DetailTab = "Overview" | "Documents" | "Intelligence";
 type CaseItem = RouterOutputs["caseRouter"]["get"];
+type DocumentItem = RouterOutputs["documentRouter"]["list"][number];
 
 const detailTabs: DetailTab[] = ["Overview", "Documents", "Intelligence"];
 
@@ -101,7 +103,7 @@ export default function CaseDetailPage() {
       </header>
 
       {activeTab === "Overview" && <OverviewTab caseItem={caseItem} />}
-      {activeTab === "Documents" && <DocumentsTab />}
+      {activeTab === "Documents" && <DocumentsTab caseId={caseItem.id} />}
       {activeTab === "Intelligence" && <IntelligenceTab />}
     </section>
   );
@@ -190,12 +192,14 @@ function OverviewTab({
   );
 }
 
-function DocumentsTab() {
-  const evidenceDocuments = mockCaseContent.documents.filter(
-    (document) => document.category === "Case evidence",
+function DocumentsTab({ caseId }: { caseId: string }) {
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const documentsQuery = trpc.documentRouter.list.useQuery({ caseId });
+  const evidenceDocuments = (documentsQuery.data ?? []).filter(
+    (document) => document.category === "CASE_EVIDENCE",
   );
-  const policyDocuments = mockCaseContent.documents.filter(
-    (document) => document.category === "Governing policy",
+  const policyDocuments = (documentsQuery.data ?? []).filter(
+    (document) => document.category === "GOVERNING_POLICY",
   );
 
   return (
@@ -204,23 +208,45 @@ function DocumentsTab() {
         <div>
           <h2 className="ui-section-title">Documents</h2>
           <p className="mt-1 text-[13px] leading-5 text-muted-foreground">
-            Document content remains mocked until the Document domain is implemented.
+            Files uploaded to this case are stored in private case storage.
           </p>
         </div>
-        <Button variant="outline" disabled>
+        <Button variant="outline" onClick={() => setIsUploadDialogOpen(true)}>
           Upload document
         </Button>
       </header>
 
-      <DocumentSection
-        title="Case evidence"
-        description="Meeting records, notes, and assessments specific to this case."
-        documents={evidenceDocuments}
-      />
-      <DocumentSection
-        title="Governing policy"
-        description="Policy documents used to assess procedural requirements."
-        documents={policyDocuments}
+      {documentsQuery.isLoading && (
+        <p role="status" className="ui-empty-state">
+          Loading documents...
+        </p>
+      )}
+
+      {documentsQuery.isError && (
+        <p role="alert" className="ui-empty-state text-danger">
+          Unable to load documents. Please try again.
+        </p>
+      )}
+
+      {!documentsQuery.isLoading && !documentsQuery.isError && (
+        <>
+          <DocumentSection
+            title="Case evidence"
+            description="Meeting records, notes, and assessments specific to this case."
+            documents={evidenceDocuments}
+          />
+          <DocumentSection
+            title="Governing policy"
+            description="Policy documents used to assess procedural requirements."
+            documents={policyDocuments}
+          />
+        </>
+      )}
+
+      <UploadDocumentDialog
+        caseId={caseId}
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
       />
     </div>
   );
@@ -233,7 +259,7 @@ function DocumentSection({
 }: {
   title: string;
   description: string;
-  documents: MockDocument[];
+  documents: DocumentItem[];
 }) {
   return (
     <section>
@@ -248,48 +274,57 @@ function DocumentSection({
       </div>
 
       <div role="list" className="mt-3 border-y border-border">
-        {documents.map((document) => (
-          <article
-            key={document.id}
-            role="listitem"
-            className="ui-list-row grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-2 py-2 sm:grid-cols-[minmax(240px,1fr)_70px_100px_68px] sm:gap-x-5"
-          >
-            <div className="flex min-w-0 items-center gap-2.5">
-              <FileText
-                aria-hidden="true"
-                className="shrink-0 text-muted-foreground"
-                size={16}
-                strokeWidth={1.7}
-              />
-              <div className="min-w-0">
-                <p className="truncate text-[13px] font-medium leading-5 text-foreground">
-                  {document.name}
-                </p>
-                <p className="ui-meta truncate">{document.type}</p>
+        {documents.length === 0 && (
+          <p className="ui-empty-state px-2">No documents in this category.</p>
+        )}
+        {documents.map((document) => {
+          const statusTone =
+            document.status === "UPLOADED" || document.status === "READY"
+              ? "success"
+              : document.status === "FAILED"
+                ? "danger"
+                : document.status === "PROCESSING"
+                  ? "info"
+                  : "warning";
+
+          return (
+            <article
+              key={document.id}
+              role="listitem"
+              className="ui-list-row grid min-h-11 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 px-2 py-2 sm:grid-cols-[minmax(240px,1fr)_100px_100px] sm:gap-x-5"
+            >
+              <div className="flex min-w-0 items-center gap-2.5">
+                <FileText
+                  aria-hidden="true"
+                  className="shrink-0 text-muted-foreground"
+                  size={16}
+                  strokeWidth={1.7}
+                />
+                <div className="min-w-0">
+                  <p className="truncate text-[13px] font-medium leading-5 text-foreground">
+                    {document.originalName}
+                  </p>
+                  <p className="ui-meta truncate">
+                    PDF · {formatFileSize(document.sizeBytes)}
+                  </p>
+                </div>
               </div>
-            </div>
-            <p className="hidden text-[12px] text-muted-foreground sm:block">
-              {document.pages} pages
-            </p>
-            <div className="hidden sm:block">
-              <StatusBadge
-                tone={document.status === "Ready" ? "success" : "warning"}
-              >
-                {document.status}
-              </StatusBadge>
-            </div>
-            <p className="hidden text-right text-[12px] text-muted-foreground sm:block">
-              —
-            </p>
-            <div className="sm:hidden">
-              <StatusBadge
-                tone={document.status === "Ready" ? "success" : "warning"}
-              >
-                {document.status}
-              </StatusBadge>
-            </div>
-          </article>
-        ))}
+              <div className="hidden sm:block">
+                <StatusBadge tone={statusTone}>
+                  {formatDocumentStatus(document.status)}
+                </StatusBadge>
+              </div>
+              <p className="hidden text-right text-[12px] text-muted-foreground sm:block">
+                {formatCaseShortDate(document.uploadedAt ?? document.createdAt)}
+              </p>
+              <div className="sm:hidden">
+                <StatusBadge tone={statusTone}>
+                  {formatDocumentStatus(document.status)}
+                </StatusBadge>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </section>
   );
